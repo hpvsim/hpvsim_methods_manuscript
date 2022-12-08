@@ -24,7 +24,7 @@ import hpvsim as hpv  # Import HPVsim as a Python module
 import numpy as np
 
 #%% Define parameters and functions
-debug=0
+debug = 0
 debut = dict()
 mixing = dict()
 
@@ -97,8 +97,9 @@ def run_scens(setting=None, verbose=0):
         n_agents       = [50e3,5e3][debug],
         dt             = [0.5,1.0][debug],
         start          = [1950,1980][debug],
-        end            = 2040,
+        end            = 2060,
         network        = 'default',
+        condoms        = dict(m=0, c=0, o=0),
         debut          = debut[setting],
         mixing         = mixing[setting],
     )
@@ -117,7 +118,7 @@ def run_scens(setting=None, verbose=0):
     # One-off catch-up for people 10-24
     campaign_vx = hpv.campaign_vx(
         prob=.5,
-        start_year=2025,
+        years=2025,
         product='bivalent',
         age_range=(10, 24),
         label='Campaign'
@@ -143,7 +144,8 @@ def run_scens(setting=None, verbose=0):
 
     scens = hpv.Scenarios(sim=sim, metapars=metapars, scenarios=scenarios)
     scens.run(verbose=verbose, debug=debug)
-    scens.plot(do_save=True, fig_path=f'figures/{setting}_uc1.png')
+    sc.saveobj(scens, f'results/{setting}_scens.obj')
+    # scens.plot(do_save=True, fig_path=f'figures/{setting}_uc1.png')
 
     return scens
 
@@ -152,6 +154,6 @@ def run_scens(setting=None, verbose=0):
 if __name__ == '__main__':
 
     for setting in ['s1', 's2', 's3']:
-        scen = run_scens(setting)
+        scen = run_scens(setting, verbose=0.1)
 
     print('Done.')
