@@ -22,6 +22,7 @@ then Setting 3.
 
 import hpvsim as hpv  # Import HPVsim as a Python module
 import numpy as np
+import sciris as sc
 
 #%% Define parameters and functions
 debug = 0
@@ -140,7 +141,7 @@ def run_scens(setting=None, verbose=0):
         }
     }
 
-    metapars = {'n_runs': 3}
+    metapars = {'n_runs': 1}
 
     scens = hpv.Scenarios(sim=sim, metapars=metapars, scenarios=scenarios)
     scens.run(verbose=verbose, debug=debug)
