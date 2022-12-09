@@ -103,6 +103,7 @@ def run_scens(setting=None, verbose=0):
         condoms        = dict(m=0, c=0, o=0),
         debut          = debut[setting],
         mixing         = mixing[setting],
+        # genotypes      = [16],
     )
 
     sim = hpv.Sim(pars)
@@ -145,7 +146,7 @@ def run_scens(setting=None, verbose=0):
 
     scens = hpv.Scenarios(sim=sim, metapars=metapars, scenarios=scenarios)
     scens.run(verbose=verbose, debug=debug)
-    sc.saveobj(scens, f'results/{setting}_scens.obj')
+    sc.saveobj(f'results/{setting}_scens.obj', scens)
     # scens.plot(do_save=True, fig_path=f'figures/{setting}_uc1.png')
 
     return scens
@@ -154,7 +155,7 @@ def run_scens(setting=None, verbose=0):
     #%% Run as a script
 if __name__ == '__main__':
 
-    for setting in ['s1', 's2', 's3']:
+    for setting in ['s1']: #, 's2', 's3']:
         scen = run_scens(setting, verbose=0.1)
 
     print('Done.')
