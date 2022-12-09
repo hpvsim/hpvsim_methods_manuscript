@@ -95,16 +95,17 @@ def make_sim(setting=None):
 
     # Parameters
     pars = dict(
-        n_agents        = [50e3,5e3][debug],
+        n_agents        = [20e3,5e3][debug],
         dt              = [0.5,1.0][debug],
         start           = [1975,2000][debug],
-        end             = 2060,
+        end             = 2040,
         burnin          = [25,0][debug],
         network         = 'default',
         condoms         = dict(m=0, c=0, o=0),
         debut           = debut[setting],
         mixing          = mixing[setting],
         use_multiscale  = False,
+        ms_agent_ratio  = 100,
         genotypes       = [16,18,'hrhpv'],
     )
 
