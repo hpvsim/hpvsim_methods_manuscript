@@ -95,15 +95,16 @@ def make_sim(setting=None):
 
     # Parameters
     pars = dict(
-        n_agents        = [50e3,5e3][debug],
+        n_agents        = [10e3,5e3][debug],
         dt              = [0.5,1.0][debug],
-        start           = [1950,1980][debug],
+        start           = [1975,1980][debug],
         end             = 2060,
+        burnin          = 25,
         network         = 'default',
         condoms         = dict(m=0, c=0, o=0),
         debut           = debut[setting],
         mixing          = mixing[setting],
-        use_multiscale  = False,
+        use_multiscale  = True,
     )
 
     sim = hpv.Sim(pars)
@@ -154,7 +155,7 @@ def run_scens(setting, verbose=0):
     scens = hpv.Scenarios(sim=base_sim, metapars=metapars, scenarios=scenarios)
     scens.run(verbose=verbose, debug=debug)
     sc.saveobj(f'results/{setting}_scens.obj', scens)
-    # scens.plot(do_save=True, fig_path=f'figures/{setting}_uc1.png')
+    scens.plot(do_save=True, fig_path=f'figures/{setting}_uc1.png')
 
     return scens
 
@@ -162,10 +163,10 @@ def run_scens(setting, verbose=0):
     #%% Run as a script
 if __name__ == '__main__':
 
-    sim = make_sim(setting='s1')
-    sim.run(verbose=0.1)
+    # sim = make_sim(setting='s1')
+    # sim.run(verbose=0.1)
 
-    # for setting in ['s1', 's2', 's3']:
-    #     scen = run_scens(setting, verbose=0.1)
+    for setting in ['s1', 's2', 's3']:
+        scen = run_scens(setting, verbose=0.1)
 
     print('Done.')
