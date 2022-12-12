@@ -28,7 +28,7 @@ import pylab as pl
 
 
 #%% Run configurations
-debug = 1
+debug = 0
 resfolder = 'results'
 figfolder = 'figures'
 to_run = [
