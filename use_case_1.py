@@ -200,7 +200,7 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None):
             )
             interventions.append(campaign_vx)
 
-    sim = hpv.Sim(pars, interventions=interventions, analyzers=prop_exposed(years=[2025,2060]))
+    sim = hpv.Sim(pars, interventions=interventions, analyzers=prop_exposed(years=[2015,2025,2060]))
 
     # Store metadata
     if meta is not None:
@@ -417,8 +417,7 @@ if __name__ == '__main__':
                 y += med
                 ymin += med-lo
                 ymax += hi-med
-
-            ax.bar(x,y)
+                ax.bar(x[sn],y[sn], color=colors[sn])
             ax.errorbar(x,y, yerr=[ymin,ymax], fmt="o", color="k")
             ax.set_xticks(x, settings.values())
             ax.set_title(axtitles[vn+1])
