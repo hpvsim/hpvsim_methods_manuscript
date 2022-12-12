@@ -147,7 +147,7 @@ class prop_exposed(hpv.Analyzer):
         return reduced_az
 
 #%% Define  functions to run
-def make_sim(setting=None, vx_scen=None, seed=0, meta=None):
+def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None):
     ''' Make a single sim '''
 
     # Decide what message to print
@@ -157,6 +157,8 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None):
         msg = f'Making sim for {setting}'
     if debug: msg += ' IN DEBUG MODE'
     print(msg)
+
+    if exposure_years is None: exposure_years=[2015,2025,2060]
 
     # Parameters
     pars = dict(
@@ -200,7 +202,7 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None):
             )
             interventions.append(campaign_vx)
 
-    sim = hpv.Sim(pars, interventions=interventions, analyzers=prop_exposed(years=[2015,2025,2060]))
+    sim = hpv.Sim(pars, interventions=interventions, analyzers=prop_exposed(years=exposure_years))
 
     # Store metadata
     if meta is not None:
@@ -213,9 +215,9 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None):
     return sim
 
 
-def run_sim(verbose=None, setting=None, vx_scen=None, seed=0, meta=None):
+def run_sim(verbose=None, setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None):
     ''' Make and run a single sim '''
-    sim = make_sim(setting=setting, vx_scen=vx_scen, seed=seed, meta=meta)
+    sim = make_sim(setting=setting, vx_scen=vx_scen, seed=seed, meta=meta, exposure_years=exposure_years)
     sim.run(verbose=verbose)
     return sim
 
@@ -238,7 +240,7 @@ def make_msims(sims, use_mean=True):
     return msim
 
 
-def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug):
+def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug, exposure_years=None):
     ''' Run scenarios for all specified settings '''
 
     # Set up iteration arguments
@@ -257,9 +259,11 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug):
                 ikw.append(sc.dcp(meta.vals))
                 ikw[-1].meta = meta
 
+    if exposure_years is None: exposure_years=[2015,2025,2060]
+
     # Run sims in parallel
     sc.heading(f'Running {len(ikw)} scenario sims...')
-    kwargs = dict(verbose=verbose)
+    kwargs = dict(verbose=verbose, exposure_years=exposure_years)
     all_sims = sc.parallelize(run_sim, iterkwargs=ikw, kwargs=kwargs, serial=debug)
 
     # Rearrange sims
@@ -316,7 +320,7 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug):
 
         # Store analyzer results
         a = msim.analyzers[0]
-        for year in [2025,2060]:
+        for year in exposure_years:
             exp_df = pd.DataFrame()
             exp_df['year'] = [year]
             exp_df['best'] = [a.prop_exposed[year].best]
@@ -387,7 +391,7 @@ if __name__ == '__main__':
         fig, axes = pl.subplots(1, 3, figsize=(16, 8))
         quantiles = np.array([0.1,0.5,0.9])
         axtitles = [
-            'Proportion exposed by age, 2025',
+            'Proportion exposed by age, 2015',
             'Cancers averted by\nroutine vaccination\n (%, 2025-2060)',
             'Cancers averted by\ncatch-up campaign\n (%, 2025-2060)',
         ]
@@ -397,7 +401,7 @@ if __name__ == '__main__':
         ax = axes[0]
         ages = np.arange(10, 25)
         for sn, skey, sname in settings.enumitems():
-            ddf = exposure[(exposure.setting == skey) & (exposure.year == 2025) & (exposure.vx_scen == 'no_vx')]
+            ddf = exposure[(exposure.setting == skey) & (exposure.year == 2015) & (exposure.vx_scen == 'no_vx')]
             best = np.array(ddf.best)[0] # TEMP indexing fix
             low = np.array(ddf.low)[0] # TEMP indexing fix
             high = np.array(ddf.high)[0] # TEMP indexing fix
