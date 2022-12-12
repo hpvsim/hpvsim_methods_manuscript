@@ -28,7 +28,7 @@ import pylab as pl
 
 
 #%% Run configurations
-debug = 0
+debug = 1
 resfolder = 'results'
 figfolder = 'figures'
 to_run = [
@@ -301,7 +301,6 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug):
     msims = np.empty((len(settings), len(vx_scens)), dtype=object)
     for msim in all_msims:
         df = pd.DataFrame()
-        exp_df = pd.DataFrame()
         i_se, i_vx = msim.meta.inds
         msims[i_se, i_vx] = msim
 
@@ -318,6 +317,7 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug):
         # Store analyzer results
         a = msim.analyzers[0]
         for year in [2025,2060]:
+            exp_df = pd.DataFrame()
             exp_df['year'] = [year]
             exp_df['best'] = [a.prop_exposed[year].best]
             exp_df['low'] = [a.prop_exposed[year].low]
@@ -325,7 +325,6 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug):
             exp_df['setting'] = [settings[i_se]]
             exp_df['vx_scen'] = [vx_scen_label]
             exp_dfs += exp_df
-
 
     alldf = pd.concat(dfs)
     all_exp_df = pd.concat(exp_dfs)
@@ -384,15 +383,32 @@ if __name__ == '__main__':
 
         # Bar plots of cancers averted
         cancers_averted = sc.loadobj(f'{resfolder}/cancers_averted_uc1.obj')
-        fig, axes = pl.subplots(1, 2, figsize=(10, 8))
+        exposure = sc.loadobj(f'{resfolder}/exposure_uc1.obj')
+        fig, axes = pl.subplots(1, 3, figsize=(16, 8))
         quantiles = np.array([0.1,0.5,0.9])
         axtitles = [
+            'Proportion exposed by age, 2025',
             'Cancers averted by\nroutine vaccination\n (%, 2025-2060)',
             'Cancers averted by\ncatch-up campaign\n (%, 2025-2060)',
         ]
 
+        # Exposure by age and setting
+        colors = sc.gridcolors(len(settings))
+        ax = axes[0]
+        ages = np.arange(10, 25)
+        for sn, skey, sname in settings.enumitems():
+            ddf = exposure[(exposure.setting == skey) & (exposure.year == 2060) & (exposure.vx_scen == 'no_vx')]
+            best = np.array(ddf.best)[0] # TEMP indexing fix
+            low = np.array(ddf.low)[0] # TEMP indexing fix
+            high = np.array(ddf.high)[0] # TEMP indexing fix
+            ax.plot(ages, best, color=colors[sn], label=sname)
+            ax.fill_between(ages, low, high, color=colors[sn], alpha=0.3)
+        ax.legend(loc='upper left')
+        ax.set_title(axtitles[0])
+
+        # Cancers averted
         for vn,vx_scen in enumerate(['routine', 'campaign']):
-            ax = axes[vn]
+            ax = axes[vn+1]
             x = np.arange(len(settings))
             y,ymin,ymax = sc.autolist(), sc.autolist(), sc.autolist()
             for sn,skey,sname in settings.enumitems():
@@ -405,7 +421,7 @@ if __name__ == '__main__':
             ax.bar(x,y)
             ax.errorbar(x,y, yerr=[ymin,ymax], fmt="o", color="k")
             ax.set_xticks(x, settings.values())
-            ax.set_title(axtitles[vn])
+            ax.set_title(axtitles[vn+1])
             sc.SIticks(ax)
             fig.tight_layout()
             fig_name = f'{figfolder}/ccaverted_uc1.png'
