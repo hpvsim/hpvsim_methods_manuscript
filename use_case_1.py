@@ -238,6 +238,8 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug):
             campaign    = sims[i_se, 2, i_s].results['cancers'][:].sum()
             cancers_averted.routine[setting] += baseline - routine
             cancers_averted.campaign[setting] += routine - campaign
+        cancers_averted.routine[setting] = np.array(cancers_averted.routine[setting])
+        cancers_averted.campaign[setting] = np.array(cancers_averted.campaign[setting])
     sc.saveobj(f'{resfolder}/cancers_averted_uc1.obj', cancers_averted)
 
     # Prepare to convert sims to msims
@@ -283,7 +285,7 @@ if __name__ == '__main__':
     if 'run_scenarios' in to_run:
         settings = ['s1', 's2', 's3']
         vx_scens = [None, 'routine', 'routine_campaign']
-        n_seeds = [5,1][debug]
+        n_seeds = [10,1][debug]
         alldf, msims = run_scens(settings=settings, vx_scens=vx_scens, n_seeds=n_seeds, verbose=-1, debug=debug)
 
     # Plot scenarios
@@ -292,12 +294,11 @@ if __name__ == '__main__':
         sc.options(font='Libertinus Sans', fontsize=24)
 
         settings = sc.objdict({'s1':'Setting 1', 's2':'Setting 2', 's3':'Setting 3'})
-        vx_scens = sc.objdict({'no_vx': 'No vaccination', 'routine': 'Routine', 'campaign':'Campaign'})
+        vx_scens = sc.objdict({'no_vx': 'No vaccination', 'routine': 'Routine', 'routine_campaign':'Campaign'})
         bigdf = sc.loadobj(f'{resfolder}/results_uc1.obj')
         colors = sc.gridcolors(len(vx_scens))
         start_year = 2000
         intv_year = 2025
-        cancers_averted = sc.objdict()
 
         for skey,sname in settings.items():
 
@@ -320,6 +321,7 @@ if __name__ == '__main__':
             fig_name = f'{figfolder}/{skey}.png'
             sc.savefig(fig_name, dpi=100)
 
+        # Bar plots of cancers averted
         cancers_averted = sc.loadobj(f'{resfolder}/cancers_averted_uc1.obj')
 
     print('Done.')
