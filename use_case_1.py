@@ -124,7 +124,7 @@ class prop_exposed(hpv.Analyzer):
             year = self.years[tpi]
             prop_exposed = sc.autolist()
             for a in range(10,25):
-                ainds = hpv.true((sim.people.age >= a) & (sim.people.age < a+1))
+                ainds = hpv.true((sim.people.age >= a) & (sim.people.age < a+1) & (sim.people.sex==0))
                 prop_exposed += sc.safedivide(sum((~np.isnan(sim.people.date_exposed[:, ainds])).any(axis=0)), len(ainds))
             self.prop_exposed[year] = np.array(prop_exposed)
         return
@@ -353,7 +353,7 @@ if __name__ == '__main__':
         sc.fonts(add=sc.thisdir(aspath=True) / 'assets' / 'LibertinusSans-Regular.otf')
         sc.options(font='Libertinus Sans', fontsize=20)
 
-        settings = sc.objdict({'s1':'Setting 1', 's2':'Setting 2', 's3':'Setting 3'})
+        settings = sc.objdict({'s1':'AFS=18,\n1y age gap', 's2':'AFS=18,\n10y age gap', 's3':'AFS=16,\n1y age gap'})
         vx_scens = sc.objdict({'no_vx': 'No vaccination', 'routine': 'Routine', 'routine_campaign':'Campaign'})
         bigdf = sc.loadobj(f'{resfolder}/results_uc1.obj')
         colors = sc.gridcolors(len(vx_scens))
@@ -397,7 +397,7 @@ if __name__ == '__main__':
         ax = axes[0]
         ages = np.arange(10, 25)
         for sn, skey, sname in settings.enumitems():
-            ddf = exposure[(exposure.setting == skey) & (exposure.year == 2060) & (exposure.vx_scen == 'no_vx')]
+            ddf = exposure[(exposure.setting == skey) & (exposure.year == 2025) & (exposure.vx_scen == 'no_vx')]
             best = np.array(ddf.best)[0] # TEMP indexing fix
             low = np.array(ddf.low)[0] # TEMP indexing fix
             high = np.array(ddf.high)[0] # TEMP indexing fix
