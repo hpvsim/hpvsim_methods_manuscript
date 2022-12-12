@@ -103,7 +103,7 @@ mixing['s2'] = {
 mixing['s3'] = mixing['s1']
 
 #%% Define  functions to run
-def make_sim(setting=None, campaign=None, seed=0, meta=None):
+def make_sim(setting=None, vx_scen=None, seed=0, meta=None):
     ''' Make a single sim '''
 
     # Decide what message to print
@@ -132,26 +132,29 @@ def make_sim(setting=None, campaign=None, seed=0, meta=None):
     # Interventions
     interventions = []
 
-    # Routine vaccination
-    routine_vx = hpv.routine_vx(
-        prob=.5,
-        start_year=2015,
-        product='bivalent',
-        age_range=(9, 10),
-        label='Routine'
-    )
-    interventions.append(routine_vx)
+    if vx_scen is not None:
 
-    if campaign is not None:
-        # One-off catch-up for people 10-24
-        campaign_vx = hpv.campaign_vx(
-            prob=.5,
-            years=2025,
-            product='bivalent',
-            age_range=(10, 24),
-            label='Campaign'
-        )
-        interventions.append(campaign_vx)
+        if 'routine' in vx_scen:
+            # Routine vaccination
+            routine_vx = hpv.routine_vx(
+                prob=.5,
+                start_year=2015,
+                product='bivalent',
+                age_range=(9, 10),
+                label='Routine'
+            )
+            interventions.append(routine_vx)
+
+        if 'campaign' in vx_scen:
+            # One-off catch-up for people 10-24
+            campaign_vx = hpv.campaign_vx(
+                prob=.5,
+                years=2025,
+                product='bivalent',
+                age_range=(10, 24),
+                label='Campaign'
+            )
+            interventions.append(campaign_vx)
 
     sim = hpv.Sim(pars, interventions=interventions)
 
@@ -160,16 +163,16 @@ def make_sim(setting=None, campaign=None, seed=0, meta=None):
         sim.meta = meta # Copy over meta info
     else:
         sim.meta = sc.objdict()
-    vx_label = 'no_campaign' if campaign is None else campaign
+    vx_label = 'no_vx' if vx_scen is None else vx_scen
     sim.label = f'{setting}-{vx_label}-{seed}' # Set label
 
 
     return sim
 
 
-def run_sim(verbose=None, setting=None, campaign=None, seed=0, meta=None):
+def run_sim(verbose=None, setting=None, vx_scen=None, seed=0, meta=None):
     ''' Make and run a single sim '''
-    sim = make_sim(setting=setting, campaign=campaign, seed=seed, meta=meta)
+    sim = make_sim(setting=setting, vx_scen=vx_scen, seed=seed, meta=meta)
     sim.run(verbose=verbose)
     return sim
 
@@ -207,7 +210,7 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug):
                 meta.count = count
                 meta.n_sims = n_sims
                 meta.inds = [i_se, i_vx, i_s]
-                meta.vals = sc.objdict(setting=setting, campaign=vx_scen, seed=i_s)
+                meta.vals = sc.objdict(setting=setting, vx_scen=vx_scen, seed=i_s)
                 ikw.append(sc.dcp(meta.vals))
                 ikw[-1].meta = meta
 
@@ -224,12 +227,17 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug):
 
     # Calculate cancers averted for each seed
     cancers_averted = sc.objdict()
+    cancers_averted.routine = sc.objdict()
+    cancers_averted.campaign = sc.objdict()
     for i_se, setting in enumerate(settings):
-        cancers_averted[setting] = sc.autolist()
+        cancers_averted.routine[setting] = sc.autolist()
+        cancers_averted.campaign[setting] = sc.autolist()
         for i_s in range(n_seeds):
-            baseline = sims[i_se, 0, i_s].results['cancers'][:].sum()
-            campaign = sims[i_se, 1, i_s].results['cancers'][:].sum()
-            cancers_averted[setting] += baseline - campaign
+            baseline    = sims[i_se, 0, i_s].results['cancers'][:].sum()
+            routine     = sims[i_se, 1, i_s].results['cancers'][:].sum()
+            campaign    = sims[i_se, 2, i_s].results['cancers'][:].sum()
+            cancers_averted.routine[setting] += baseline - routine
+            cancers_averted.campaign[setting] += routine - campaign
     sc.saveobj(f'{resfolder}/cancers_averted_uc1.obj', cancers_averted)
 
     # Prepare to convert sims to msims
@@ -254,7 +262,7 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug):
         df['cancers_low']   = msim.results['cancers'].low
         df['cancers_high']   = msim.results['cancers'].high
         df['setting']   = settings[i_se]
-        vx_scen_label = 'no_campaign' if vx_scens[i_vx] is None else vx_scens[i_vx]
+        vx_scen_label = 'no_vx' if vx_scens[i_vx] is None else vx_scens[i_vx]
         df['vx_scen'] = vx_scen_label
         dfs += df
 
@@ -274,7 +282,7 @@ if __name__ == '__main__':
     # Run scenarios
     if 'run_scenarios' in to_run:
         settings = ['s1', 's2', 's3']
-        vx_scens = ['no_campaign', 'campaign']
+        vx_scens = [None, 'routine', 'campaign']
         n_seeds = [5,1][debug]
         alldf, msims = run_scens(settings=settings, vx_scens=vx_scens, n_seeds=n_seeds, verbose=-1, debug=debug)
 
@@ -312,6 +320,6 @@ if __name__ == '__main__':
             fig_name = f'{figfolder}/{skey}.png'
             sc.savefig(fig_name, dpi=100)
 
-            cancers_averted[skey] = bigdf[(bigdf.setting == skey) & (bigdf.vx_scen == 'no_campaign')].cancers[ii:].sum() - bigdf[(bigdf.setting == skey) & (bigdf.vx_scen == 'campaign')].cancers[ii:].sum()
+        cancers_averted = sc.loadobj(f'{resfolder}/cancers_averted_uc1.obj')
 
     print('Done.')
