@@ -282,7 +282,7 @@ if __name__ == '__main__':
     # Run scenarios
     if 'run_scenarios' in to_run:
         settings = ['s1', 's2', 's3']
-        vx_scens = [None, 'routine', 'campaign']
+        vx_scens = [None, 'routine', 'routine_campaign']
         n_seeds = [5,1][debug]
         alldf, msims = run_scens(settings=settings, vx_scens=vx_scens, n_seeds=n_seeds, verbose=-1, debug=debug)
 
@@ -292,7 +292,7 @@ if __name__ == '__main__':
         sc.options(font='Libertinus Sans', fontsize=24)
 
         settings = sc.objdict({'s1':'Setting 1', 's2':'Setting 2', 's3':'Setting 3'})
-        vx_scens = sc.objdict({'no_campaign': 'No campaign', 'campaign':'Campaign'})
+        vx_scens = sc.objdict({'no_vx': 'No vaccination', 'routine': 'Routine', 'campaign':'Campaign'})
         bigdf = sc.loadobj(f'{resfolder}/results_uc1.obj')
         colors = sc.gridcolors(len(vx_scens))
         start_year = 2000
