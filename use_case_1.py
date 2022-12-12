@@ -14,7 +14,7 @@ age of first sex for girls (AFS) and the rates of sexual mixing between younger
 women and older men, quantified by the average sexual partner age difference (SPAD):
  1. AFS = 18, SPAD = 1      --- most young girls (<18) will not have been exposed
  2. AFS = 18, SPAD = 10     --- more girls have been exposed via older partners
- 3. AFS = 16, SPAD = 1      --- more girls expoesd via younger AFS
+ 3. AFS = 16, SPAD = 1      --- more girls exposed via younger AFS
 
 *Hypothesis*
 EAV will have the highest impact in Setting 1, followed by Setting 2, then 3.
@@ -44,11 +44,11 @@ mixing = dict()
 # Define ASF for all 3 archetypes
 debut['s1'] = dict(
     f=dict(dist='normal', par1=18., par2=2.),
-    m=dict(dist='normal', par1=20., par2=2.),
+    m=dict(dist='normal', par1=19., par2=2.),
 )
 debut['s2'] = dict(
     f=dict(dist='normal', par1=18., par2=2.),
-    m=dict(dist='normal', par1=19., par2=2.),
+    m=dict(dist='normal', par1=20., par2=2.),
 )
 debut['s3'] = dict(
     f=dict(dist='normal', par1=16., par2=2.),
@@ -101,6 +101,50 @@ mixing['s2'] = {
 }
 
 mixing['s3'] = mixing['s1']
+
+class prop_exposed(hpv.Analyzer):
+    ''' Store proportion of agents exposed '''
+    def __init__(self, years=None):
+        super().__init__()
+        self.years = years
+        self.timepoints = []
+
+    def initialize(self, sim):
+        super().initialize(sim)
+        for y in self.years:
+            try:    tp = sc.findinds(sim.yearvec, y)[0]
+            except: raise ValueError('Year not found')
+            self.timepoints.append(tp)
+        self.prop_exposed = dict()
+        for y in self.years: self.prop_exposed[y] = []
+
+    def apply(self, sim):
+        if sim.t in self.timepoints:
+            tpi = self.timepoints.index(sim.t)
+            year = self.years[tpi]
+            prop_exposed = sc.autolist()
+            for a in range(10,25):
+                ainds = hpv.true((sim.people.age >= a) & (sim.people.age < a+1))
+                prop_exposed += sc.safedivide(sum((~np.isnan(sim.people.date_exposed[:, ainds])).any(axis=0)), len(ainds))
+            self.prop_exposed[year] = np.array(prop_exposed)
+        return
+
+    @staticmethod
+    def reduce(analyzers, quantiles=None):
+        if quantiles is None: quantiles = {'low': 0.1, 'high': 0.9}
+        base_az = analyzers[0]
+        reduced_az = sc.dcp(base_az)
+        reduced_az.prop_exposed = dict()
+        for year in base_az.years:
+            reduced_az.prop_exposed[year] = sc.objdict()
+            allres = np.empty([len(analyzers), len(base_az.prop_exposed[year])])
+            for ai,az in enumerate(analyzers):
+                allres[ai,:] = az.prop_exposed[year][:]
+            reduced_az.prop_exposed[year].best  = np.quantile(allres, 0.5, axis=0)
+            reduced_az.prop_exposed[year].low   = np.quantile(allres, quantiles['low'], axis=0)
+            reduced_az.prop_exposed[year].high  = np.quantile(allres, quantiles['high'], axis=0)
+
+        return reduced_az
 
 #%% Define  functions to run
 def make_sim(setting=None, vx_scen=None, seed=0, meta=None):
@@ -156,7 +200,7 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None):
             )
             interventions.append(campaign_vx)
 
-    sim = hpv.Sim(pars, interventions=interventions)
+    sim = hpv.Sim(pars, interventions=interventions, analyzers=prop_exposed(years=[2025,2060]))
 
     # Store metadata
     if meta is not None:
@@ -165,7 +209,6 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None):
         sim.meta = sc.objdict()
     vx_label = 'no_vx' if vx_scen is None else vx_scen
     sim.label = f'{setting}-{vx_label}-{seed}' # Set label
-
 
     return sim
 
@@ -236,8 +279,8 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug):
             baseline    = sims[i_se, 0, i_s].results['cancers'][:].sum()
             routine     = sims[i_se, 1, i_s].results['cancers'][:].sum()
             campaign    = sims[i_se, 2, i_s].results['cancers'][:].sum()
-            cancers_averted.routine[setting] += baseline - routine
-            cancers_averted.campaign[setting] += routine - campaign
+            cancers_averted.routine[setting] += (baseline - routine)/baseline
+            cancers_averted.campaign[setting] += (routine - campaign)/routine
         cancers_averted.routine[setting] = np.array(cancers_averted.routine[setting])
         cancers_averted.campaign[setting] = np.array(cancers_averted.campaign[setting])
     sc.saveobj(f'{resfolder}/cancers_averted_uc1.obj', cancers_averted)
@@ -254,11 +297,15 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug):
 
     # Now strip out all the results and place them in a dataframe
     dfs = sc.autolist()
+    exp_dfs = sc.autolist()
     msims = np.empty((len(settings), len(vx_scens)), dtype=object)
     for msim in all_msims:
         df = pd.DataFrame()
+        exp_df = pd.DataFrame()
         i_se, i_vx = msim.meta.inds
         msims[i_se, i_vx] = msim
+
+        # Store main results
         df['year']      = msim.results['year']
         df['cancers']   = msim.results['cancers'][:]
         df['cancers_low']   = msim.results['cancers'].low
@@ -268,8 +315,22 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug):
         df['vx_scen'] = vx_scen_label
         dfs += df
 
+        # Store analyzer results
+        a = msim.analyzers[0]
+        for year in [2025,2060]:
+            exp_df['year'] = [year]
+            exp_df['best'] = [a.prop_exposed[year].best]
+            exp_df['low'] = [a.prop_exposed[year].low]
+            exp_df['high'] = [a.prop_exposed[year].high]
+            exp_df['setting'] = [settings[i_se]]
+            exp_df['vx_scen'] = [vx_scen_label]
+            exp_dfs += exp_df
+
+
     alldf = pd.concat(dfs)
+    all_exp_df = pd.concat(exp_dfs)
     sc.saveobj(f'{resfolder}/results_uc1.obj', alldf)
+    sc.saveobj(f'{resfolder}/exposure_uc1.obj', all_exp_df)
 
     return alldf, msims
 
@@ -291,7 +352,7 @@ if __name__ == '__main__':
     # Plot scenarios
     if 'plot_scenarios' in to_run:
         sc.fonts(add=sc.thisdir(aspath=True) / 'assets' / 'LibertinusSans-Regular.otf')
-        sc.options(font='Libertinus Sans', fontsize=24)
+        sc.options(font='Libertinus Sans', fontsize=20)
 
         settings = sc.objdict({'s1':'Setting 1', 's2':'Setting 2', 's3':'Setting 3'})
         vx_scens = sc.objdict({'no_vx': 'No vaccination', 'routine': 'Routine', 'routine_campaign':'Campaign'})
@@ -323,5 +384,31 @@ if __name__ == '__main__':
 
         # Bar plots of cancers averted
         cancers_averted = sc.loadobj(f'{resfolder}/cancers_averted_uc1.obj')
+        fig, axes = pl.subplots(1, 2, figsize=(10, 8))
+        quantiles = np.array([0.1,0.5,0.9])
+        axtitles = [
+            'Cancers averted by\nroutine vaccination\n (%, 2025-2060)',
+            'Cancers averted by\ncatch-up campaign\n (%, 2025-2060)',
+        ]
+
+        for vn,vx_scen in enumerate(['routine', 'campaign']):
+            ax = axes[vn]
+            x = np.arange(len(settings))
+            y,ymin,ymax = sc.autolist(), sc.autolist(), sc.autolist()
+            for sn,skey,sname in settings.enumitems():
+                res = cancers_averted[vx_scen][skey]
+                lo,med,hi = np.quantile(res,quantiles)
+                y += med
+                ymin += med-lo
+                ymax += hi-med
+
+            ax.bar(x,y)
+            ax.errorbar(x,y, yerr=[ymin,ymax], fmt="o", color="k")
+            ax.set_xticks(x, settings.values())
+            ax.set_title(axtitles[vn])
+            sc.SIticks(ax)
+            fig.tight_layout()
+            fig_name = f'{figfolder}/ccaverted_uc1.png'
+            sc.savefig(fig_name, dpi=100)
 
     print('Done.')
