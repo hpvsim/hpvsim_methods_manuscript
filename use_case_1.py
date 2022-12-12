@@ -12,9 +12,9 @@ Here we investigate the potential impact of expanding the age of vaccination
 (EAV) in three different country archetypes that vary according to the average
 age of first sex for girls (AFS) and the rates of sexual mixing between younger
 women and older men, quantified by the average sexual partner age difference (SPAD):
- 1. AFS = 18, SPAD = 10
- 2. AFS = 18, SPAD = 1
- 3. AFS = 16, SPAD = 1
+ 1. AFS = 18, SPAD = 1      --- most young girls (<18) will not have been exposed
+ 2. AFS = 18, SPAD = 10     --- more girls have been exposed via older partners
+ 3. AFS = 16, SPAD = 1      --- more girls expoesd via younger AFS
 
 *Hypothesis*
 EAV will have the highest impact in Setting 1, followed by Setting 2, then 3.
@@ -24,6 +24,8 @@ import hpvsim as hpv
 import numpy as np
 import sciris as sc
 import pandas as pd
+import pylab as pl
+
 
 #%% Run configurations
 debug = 0
@@ -32,6 +34,7 @@ figfolder = 'figures'
 to_run = [
     # 'run_sim',
     'run_scenarios',
+    # 'plot_scenarios',
 ]
 
 #%% Define parameters
@@ -59,28 +62,6 @@ mixing['s1'] = {
         [0,     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
         [5,     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
         [10,    0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [15,    0,  0,  1, .5,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [20,    0,  0,  1, .5, .5,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [25,    0,  0,  0,  1, .5, .5,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [30,    0,  0,  0, .5,  1, .5, .5,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [35,    0,  0,  0, .5, .5,  1, .5, .5,  0,  0,  0,  0,  0,  0,  0,  0],
-        [40,    0,  0,  0, .4, .5, .5,  1, .5, .5,  0,  0,  0,  0,  0,  0,  0],
-        [45,    0,  0,  0, .3, .4, .5, .5,  1, .5, .5,  0,  0,  0,  0,  0,  0],
-        [50,    0,  0,  0, .2, .3, .4, .5, .5,  1, .5, .5,  0,  0,  0,  0,  0],
-        [55,    0,  0,  0, .1, .2, .3, .4, .5, .5,  1, .5, .5,  0,  0,  0,  0],
-        [60,    0,  0,  0,  0, .1, .2, .3, .4, .5, .5,  1, .5, .5,  0,  0,  0],
-        [65,    0,  0,  0,  0,  0, .1, .2, .3, .4, .5, .5,  1, .5, .5,  0,  0],
-        [70,    0,  0,  0,  0,  0,  0, .1, .2, .3, .4, .5, .5,  1, .5,  1, .5],
-        [75,    0,  0,  0,  0,  0,  0,  0, .1, .2, .3, .4, .5, .5,  1,  1, 1],
-    ]) for k in ['m','c','o']
-}
-
-mixing['s2'] = {
-    k:np.array([
-        #       0,  5,  10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75
-        [0,     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [5,     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [10,    0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
         [15,    0,  0,  1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
         [20,    0,  0,  1, .5,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
         [25,    0,  0,  0,  0, .5,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
@@ -97,7 +78,29 @@ mixing['s2'] = {
     ]) for k in ['m','c','o']
 }
 
-mixing['s3'] = mixing['s2']
+mixing['s1'] = {
+    k:np.array([
+        #       0,  5,  10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75
+        [0,     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        [5,     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        [10,    0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        [15,    0,  0,  1, .5,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        [20,    0,  0,  1, .5, .5,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        [25,    0,  0,  0,  1, .5, .5,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        [30,    0,  0,  0, .5,  1, .5, .5,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        [35,    0,  0,  0, .5, .5,  1, .5, .5,  0,  0,  0,  0,  0,  0,  0,  0],
+        [40,    0,  0,  0, .4, .5, .5,  1, .5, .5,  0,  0,  0,  0,  0,  0,  0],
+        [45,    0,  0,  0, .3, .4, .5, .5,  1, .5, .5,  0,  0,  0,  0,  0,  0],
+        [50,    0,  0,  0, .2, .3, .4, .5, .5,  1, .5, .5,  0,  0,  0,  0,  0],
+        [55,    0,  0,  0, .1, .2, .3, .4, .5, .5,  1, .5, .5,  0,  0,  0,  0],
+        [60,    0,  0,  0,  0, .1, .2, .3, .4, .5, .5,  1, .5, .5,  0,  0,  0],
+        [65,    0,  0,  0,  0,  0, .1, .2, .3, .4, .5, .5,  1, .5, .5,  0,  0],
+        [70,    0,  0,  0,  0,  0,  0, .1, .2, .3, .4, .5, .5,  1, .5,  1, .5],
+        [75,    0,  0,  0,  0,  0,  0,  0, .1, .2, .3, .4, .5, .5,  1,  1, 1],
+    ]) for k in ['m','c','o']
+}
+
+mixing['s3'] = mixing['s1']
 
 #%% Define  functions to run
 def make_sim(setting=None, campaign=None, seed=0, meta=None):
@@ -219,6 +222,16 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug):
         i_se, i_vx, i_s = sim.meta.inds
         sims[i_se, i_vx, i_s] = sim
 
+    # Calculate cancers averted for each seed
+    cancers_averted = sc.objdict()
+    for i_se, setting in enumerate(settings):
+        cancers_averted[setting] = sc.autolist()
+        for i_s in range(n_seeds):
+            baseline = sims[i_se, 0, i_s].results['cancers'][:].sum()
+            campaign = sims[i_se, 1, i_s].results['cancers'][:].sum()
+            cancers_averted[setting] += baseline - campaign
+    sc.saveobj(f'{resfolder}/cancers_averted_uc1.obj', cancers_averted)
+
     # Prepare to convert sims to msims
     all_sims_for_multi = []
     for i_se, setting in enumerate(settings):
@@ -238,6 +251,8 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug):
         msims[i_se, i_vx] = msim
         df['year']      = msim.results['year']
         df['cancers']   = msim.results['cancers'][:]
+        df['cancers_low']   = msim.results['cancers'].low
+        df['cancers_high']   = msim.results['cancers'].high
         df['setting']   = settings[i_se]
         vx_scen_label = 'no_campaign' if vx_scens[i_vx] is None else vx_scens[i_vx]
         df['vx_scen'] = vx_scen_label
@@ -259,9 +274,44 @@ if __name__ == '__main__':
     # Run scenarios
     if 'run_scenarios' in to_run:
         settings = ['s1', 's2', 's3']
-        vx_scens = [None, 'campaign']
+        vx_scens = ['no_campaign', 'campaign']
         n_seeds = [5,1][debug]
         alldf, msims = run_scens(settings=settings, vx_scens=vx_scens, n_seeds=n_seeds, verbose=-1, debug=debug)
 
+    # Plot scenarios
+    if 'plot_scenarios' in to_run:
+        sc.fonts(add=sc.thisdir(aspath=True) / 'assets' / 'LibertinusSans-Regular.otf')
+        sc.options(font='Libertinus Sans', fontsize=24)
+
+        settings = sc.objdict({'s1':'Setting 1', 's2':'Setting 2', 's3':'Setting 3'})
+        vx_scens = sc.objdict({'no_campaign': 'No campaign', 'campaign':'Campaign'})
+        bigdf = sc.loadobj(f'{resfolder}/results_uc1.obj')
+        colors = sc.gridcolors(len(vx_scens))
+        start_year = 2000
+        intv_year = 2025
+        cancers_averted = sc.objdict()
+
+        for skey,sname in settings.items():
+
+            fig, ax = pl.subplots(figsize=(16, 8))
+
+            for vn, vkey, vname in vx_scens.enumitems():
+                df = bigdf[(bigdf.setting == skey) & (bigdf.vx_scen == vkey)]
+                si = sc.findinds(np.array(df.year), start_year)[0]
+                ii = sc.findinds(np.array(df.year), intv_year)[0]
+                years = np.array(df.year)[si:]
+                best = np.array(df['cancers'])[si:]
+                low = np.array(df['cancers_low'])[si:]
+                high = np.array(df['cancers_high'])[si:]
+                ax.plot(years, best, color=colors[vn], label=vname)
+                ax.fill_between(years, low, high, color=colors[vn], alpha=0.3)
+            ax.legend(loc='upper left')
+            sc.SIticks(ax)
+            sc.setylim([0,350])
+            fig.tight_layout()
+            fig_name = f'{figfolder}/{skey}.png'
+            sc.savefig(fig_name, dpi=100)
+
+            cancers_averted[skey] = bigdf[(bigdf.setting == skey) & (bigdf.vx_scen == 'no_campaign')].cancers[ii:].sum() - bigdf[(bigdf.setting == skey) & (bigdf.vx_scen == 'campaign')].cancers[ii:].sum()
 
     print('Done.')
