@@ -193,10 +193,12 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
 
         if 'campaign' in vx_scen:
             # One-off catch-up for people 10-24
+            campaign_eligible = lambda sim: np.isnan(sim.people.date_vaccinated)
             campaign_vx = hpv.campaign_vx(
                 prob=.5,
                 years=2025,
                 product='bivalent',
+                eligibility=campaign_eligible,
                 age_range=(10, 24),
                 label='Campaign'
             )
