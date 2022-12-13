@@ -25,6 +25,8 @@ import numpy as np
 import sciris as sc
 import pandas as pd
 import pylab as pl
+import matplotlib as mpl
+
 
 
 #%% Run configurations
@@ -33,11 +35,14 @@ resfolder = 'results'
 figfolder = 'figures'
 to_run = [
     # 'run_sim',
-    'run_scenarios',
+    'run_sims',
+    # 'plot_mixing',
+    # 'run_scenarios',
     # 'plot_scenarios',
 ]
 
 #%% Define parameters
+settings = ['s1', 's2', 's3']
 debut = dict()
 mixing = dict()
 
@@ -207,7 +212,15 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
             )
             interventions.append(campaign_vx)
 
-    sim = hpv.Sim(pars, interventions=interventions, analyzers=prop_exposed(years=exposure_years))
+    # Analyzers
+    analyzers = sc.autolist()
+    analyzers += [
+        prop_exposed(years=exposure_years),
+        hpv.snapshot(timepoints=['2015']),
+        hpv.age_pyramid(timepoints=['2000', '2020']),
+    ]
+
+    sim = hpv.Sim(pars, interventions=interventions, analyzers=analyzers)
 
     # Store metadata
     if meta is not None:
@@ -224,7 +237,22 @@ def run_sim(verbose=None, setting=None, vx_scen=None, seed=0, meta=None, exposur
     ''' Make and run a single sim '''
     sim = make_sim(setting=setting, vx_scen=vx_scen, seed=seed, meta=meta, exposure_years=exposure_years)
     sim.run(verbose=verbose)
+    sim.shrink()
     return sim
+
+
+def run_sims(settings=None, debug=debug, verbose=None, exposure_years=None):
+    ''' Run multiple simulations in parallel '''
+
+    kwargs = dict(verbose=verbose, vx_scen=None, seed=0, meta=None, exposure_years=exposure_years)
+    simlist = sc.parallelize(run_sim, iterkwargs=dict(setting=settings), kwargs=kwargs, serial=debug, die=True)
+    sims = sc.objdict()
+    for setting, sim in zip(settings, simlist):
+        sims[setting] = sim
+        a = sim.get_analyzer('snapshot')
+        people = a.snapshots[0]
+        sc.saveobj(f'{resfolder}/{setting}.ppl', people)
+    return sims
 
 
 def make_msims(sims, use_mean=True):
@@ -343,6 +371,14 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug, e
     return alldf, msims
 
 
+# Additional utils
+def set_font(size=None, font='Libertinus Sans'):
+    ''' Set a custom font '''
+    sc.fonts(add=sc.thisdir(aspath=True) / 'assets' / 'LibertinusSans-Regular.otf')
+    sc.options(font=font, fontsize=size)
+    return
+
+
 #%% Run as a script
 if __name__ == '__main__':
 
@@ -350,17 +386,43 @@ if __name__ == '__main__':
     if 'run_sim' in to_run:
         sim = run_sim(verbose=0.1, setting='s1')
 
+    # Run sims in parallel
+    if 'run_sims' in to_run:
+        sim = run_sims(settings=settings, verbose=0.1, debug=debug, exposure_years=[2015,2025,2060])
+
     # Run scenarios
     if 'run_scenarios' in to_run:
-        settings = ['s1', 's2', 's3']
         vx_scens = [None, 'routine', 'routine_campaign']
         n_seeds = [10,1][debug]
         alldf, msims = run_scens(settings=settings, vx_scens=vx_scens, n_seeds=n_seeds, verbose=-1, debug=debug)
 
+
+    # Plot input assumptions
+    if 'plot_mixing' in to_run:
+        set_font(size=20)
+        fig, axes = pl.subplots(nrows=1, ncols=3, figsize=(24, 8))
+        layer_keys = ['Casual']
+        setting_labels = sc.objdict({'s1':'AFS=18, 1y age gap', 's2':'AFS=18, 10y age gap', 's3':'AFS=16, 1y age gap'})
+
+        for sn,setting in enumerate(settings):
+            filename = f'{resfolder}/{setting}.ppl'
+            people = sc.loadobj(filename)
+            ax = axes[sn]
+            fc = people.contacts['c']['age_f']
+            mc = people.contacts['c']['age_m']
+            h = ax.hist2d(fc, mc, bins=np.linspace(0, 75, 16), density=True, norm=mpl.colors.LogNorm())
+            ax.set_xlabel('Age of female partner')
+            ax.set_ylabel('Age of male partner')
+            fig.colorbar(h[3], ax=ax)
+            ax.set_title(setting_labels[setting])
+
+        fig.tight_layout()
+        sc.savefig(f'{figfolder}/networks.png', dpi=100)
+
+
     # Plot scenarios
     if 'plot_scenarios' in to_run:
-        sc.fonts(add=sc.thisdir(aspath=True) / 'assets' / 'LibertinusSans-Regular.otf')
-        sc.options(font='Libertinus Sans', fontsize=20)
+        set_font(size=20)
 
         settings = sc.objdict({'s1':'AFS=18,\n1y age gap', 's2':'AFS=18,\n10y age gap', 's3':'AFS=16,\n1y age gap'})
         vx_scens = sc.objdict({'no_vx': 'No vaccination', 'routine': 'Routine', 'routine_campaign':'Campaign'})
