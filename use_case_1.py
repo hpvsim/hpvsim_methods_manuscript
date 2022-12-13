@@ -252,6 +252,7 @@ def run_sims(settings=None, debug=debug, verbose=None, exposure_years=None):
         a = sim.get_analyzer('snapshot')
         people = a.snapshots[0]
         sc.saveobj(f'{resfolder}/{setting}.ppl', people)
+        sc.saveobj(f'{resfolder}/{setting}.sim', sim)
     return sims
 
 
