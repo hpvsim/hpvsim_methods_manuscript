@@ -245,7 +245,7 @@ def run_sims(settings=None, debug=debug, verbose=None, exposure_years=None):
     ''' Run multiple simulations in parallel '''
 
     kwargs = dict(verbose=verbose, vx_scen=None, seed=0, meta=None, exposure_years=exposure_years)
-    simlist = sc.parallelize(run_sim, iterkwargs=dict(setting=settings), kwargs=kwargs, serial=debug, die=True)
+    simlist = sc.parallelize(run_sim, iterkwargs=dict(setting=settings), kwargs=kwargs, serial=debug)
     sims = sc.objdict()
     for setting, sim in zip(settings, simlist):
         sims[setting] = sim
