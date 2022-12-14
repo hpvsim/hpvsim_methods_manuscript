@@ -21,6 +21,8 @@ EAV will have the highest impact in Setting 1, followed by Setting 2, then 3.
 """
 
 import hpvsim as hpv
+import hpvsim.defaults as hpd
+import hpvsim.plotting as hppl
 import numpy as np
 import sciris as sc
 import pandas as pd
@@ -35,9 +37,10 @@ resfolder = 'results'
 figfolder = 'figures'
 to_run = [
     # 'run_sim',
-    'run_sims',
+    # 'run_sims',
     # 'plot_mixing',
-    # 'run_scenarios',
+    # 'plot_sims',
+    'run_scenarios',
     # 'plot_scenarios',
 ]
 
@@ -310,13 +313,16 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug, e
     cancers_averted = sc.objdict()
     cancers_averted.routine = sc.objdict()
     cancers_averted.campaign = sc.objdict()
+    intv_year = 2025
+    si = sc.findinds(sim.res_yearvec, intv_year)[0]
     for i_se, setting in enumerate(settings):
         cancers_averted.routine[setting] = sc.autolist()
         cancers_averted.campaign[setting] = sc.autolist()
+
         for i_s in range(n_seeds):
-            baseline    = sims[i_se, 0, i_s].results['cancers'][:].sum()
-            routine     = sims[i_se, 1, i_s].results['cancers'][:].sum()
-            campaign    = sims[i_se, 2, i_s].results['cancers'][:].sum()
+            baseline    = sims[i_se, 0, i_s].results['cancers'][si:].sum()
+            routine     = sims[i_se, 1, i_s].results['cancers'][si:].sum()
+            campaign    = sims[i_se, 2, i_s].results['cancers'][si:].sum()
             cancers_averted.routine[setting] += (baseline - routine)/baseline
             cancers_averted.campaign[setting] += (routine - campaign)/routine
         cancers_averted.routine[setting] = np.array(cancers_averted.routine[setting])
@@ -420,6 +426,42 @@ if __name__ == '__main__':
         fig.tight_layout()
         sc.savefig(f'{figfolder}/networks.png', dpi=100)
 
+    # Plot sim results
+    if 'plot_sims' in to_run:
+
+        # Load and process sims for plotting
+        sims = sc.objdict()
+        to_plot = ['hpv_prevalence_by_age', 'infections_by_age', 'cancers_by_age']
+        for sn,setting in enumerate(settings):
+            sim = sc.loadobj(f'{resfolder}/{setting}.sim')
+            sim.plot(do_save=True, fig_path=f'{figfolder}/{setting}_sim.png')
+            sims[setting] = sim
+        dates = [2015, 2030, 2060]
+
+        # Create figure, define plotting settings and labels
+        set_font(size=20)
+        fig, axes = pl.subplots(nrows=len(dates), ncols=len(to_plot), figsize=(24, 16))
+        colors = sc.gridcolors(len(settings))
+        setting_labels = sc.objdict({'s1':'AFS=18, 1y gap', 's2':'AFS=18, 10y gap', 's3':'AFS=16, 1y gap'})
+
+        # Make plots
+        for cn,reskey in enumerate(to_plot):
+            for rn, date in enumerate(dates):
+                ax = axes[rn, cn]
+                for sn, setting, sim in sims.enumitems():
+                    res = sim.results[reskey]
+                    idx = sc.findinds(sim.results['year'], date)[0]
+                    x = sim['age_bins'][:-1]
+                    ax.plot(x, res.values[:, idx], color=colors[sn], label=setting_labels[setting])
+                    if reskey == 'cancers_by_age':
+                        ax.set_ylim([0,150])
+                    if reskey == 'infections_by_age':
+                        ax.set_ylim([0, 15e3])
+                if cn==2 and rn==0:
+                    ax.legend()
+                ax.set_title(f'{res.name} - {date}')
+        fig.tight_layout()
+        sc.savefig(f'{figfolder}/age_results.png', dpi=100)
 
     # Plot scenarios
     if 'plot_scenarios' in to_run:
