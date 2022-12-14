@@ -29,6 +29,9 @@ import pandas as pd
 import pylab as pl
 import matplotlib as mpl
 
+# Imports from this repository
+import utils as ut
+
 
 
 #%% Run configurations
@@ -40,8 +43,8 @@ to_run = [
     # 'run_sims',
     # 'plot_mixing',
     # 'plot_sims',
-    'run_scenarios',
-    # 'plot_scenarios',
+    # 'run_scenarios',
+    'plot_scenarios',
 ]
 
 #%% Define parameters
@@ -381,13 +384,6 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug, e
     return alldf, msims
 
 
-# Additional utils
-def set_font(size=None, font='Libertinus Sans'):
-    ''' Set a custom font '''
-    sc.fonts(add=sc.thisdir(aspath=True) / 'assets' / 'LibertinusSans-Regular.otf')
-    sc.options(font=font, fontsize=size)
-    return
-
 
 #%% Run as a script
 if __name__ == '__main__':
@@ -409,7 +405,7 @@ if __name__ == '__main__':
 
     # Plot input assumptions
     if 'plot_mixing' in to_run:
-        set_font(size=20)
+        ut.set_font(size=20)
         fig, axes = pl.subplots(nrows=1, ncols=3, figsize=(24, 8))
         layer_keys = ['Casual']
         setting_labels = sc.objdict({'s1':'AFS=18, 1y age gap', 's2':'AFS=18, 10y age gap', 's3':'AFS=16, 1y age gap'})
@@ -442,7 +438,7 @@ if __name__ == '__main__':
         dates = [2015, 2030, 2060]
 
         # Create figure, define plotting settings and labels
-        set_font(size=20)
+        ut.set_font(size=20)
         fig, axes = pl.subplots(nrows=len(dates), ncols=len(to_plot), figsize=(24, 16))
         colors = sc.gridcolors(len(settings))
         setting_labels = sc.objdict({'s1':'AFS=18, 1y gap', 's2':'AFS=18, 10y gap', 's3':'AFS=16, 1y gap'})
@@ -468,7 +464,7 @@ if __name__ == '__main__':
 
     # Plot scenarios
     if 'plot_scenarios' in to_run:
-        set_font(size=20)
+        ut.set_font(size=20)
 
         settings = sc.objdict({'s1':'AFS=18,\n1y age gap', 's2':'AFS=18,\n10y age gap', 's3':'AFS=16,\n1y age gap'})
         vx_scens = sc.objdict({'no_vx': 'No vaccination', 'routine': 'Routine', 'routine_campaign':'Campaign'})
