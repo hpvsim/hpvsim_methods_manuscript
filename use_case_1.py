@@ -43,7 +43,6 @@ to_run = [
     'run_scenarios',
     # 'plot_scenarios',
 ]
-]
 
 #%% Define parameters
 settings = ['s1', 's2', 's3']
