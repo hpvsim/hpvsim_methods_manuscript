@@ -40,8 +40,8 @@ to_run = [
     # 'run_sims',
     # 'plot_mixing',
     # 'plot_sims',
-    'run_scenarios',
-    # 'plot_scenarios',
+    # 'run_scenarios',
+    'plot_scenarios',
 ]
 
 #%% Define parameters
@@ -210,10 +210,10 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
             campaign_vx = hpv.campaign_vx(
                 prob=.5,
                 sex=0,
-                years=2025,
+                years=[2025,2026,2027,2028,2029],
                 product='bivalent',
                 eligibility=vax_eligible,
-                age_range=(15, 24),
+                age_range=(18, 30),
                 label='Campaign'
             )
             interventions.append(campaign_vx)
