@@ -166,14 +166,14 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
     if debug: msg += ' IN DEBUG MODE'
     print(msg)
 
-    if exposure_years is None: exposure_years=[2015,2025,2060]
+    if exposure_years is None: exposure_years=[2015,2025,2060,2100]
 
     # Parameters
     pars = dict(
         n_agents        = [50e3,5e3][debug],
         dt              = [0.5,1.0][debug],
         start           = [1975,2000][debug],
-        end             = 2060,
+        end             = 2100,
         burnin          = [25,0][debug],
         condoms         = dict(m=0, c=0, o=0),
         debut           = debut[setting],
@@ -296,7 +296,7 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug, e
                 ikw.append(sc.dcp(meta.vals))
                 ikw[-1].meta = meta
 
-    if exposure_years is None: exposure_years=[2015,2025,2060]
+    if exposure_years is None: exposure_years=[2015,2025,2060,2100]
 
     # Run sims in parallel
     sc.heading(f'Running {len(ikw)} scenario sims...')
@@ -395,7 +395,7 @@ if __name__ == '__main__':
 
     # Run sims in parallel
     if 'run_sims' in to_run:
-        sim = run_sims(settings=settings, verbose=0.1, debug=debug, exposure_years=[2015,2025,2060])
+        sim = run_sims(settings=settings, verbose=0.1, debug=debug, exposure_years=[2015,2025,2060,2100])
 
     # Run scenarios
     if 'run_scenarios' in to_run:
@@ -436,7 +436,7 @@ if __name__ == '__main__':
             sim = sc.loadobj(f'{resfolder}/{setting}.sim')
             sim.plot(do_save=True, fig_path=f'{figfolder}/{setting}_sim.png')
             sims[setting] = sim
-        dates = [2015, 2030, 2060]
+        dates = [2015, 2030, 2060, 2100]
 
         # Create figure, define plotting settings and labels
         set_font(size=20)
@@ -502,8 +502,8 @@ if __name__ == '__main__':
         quantiles = np.array([0.1,0.5,0.9])
         axtitles = [
             'Proportion exposed by age, 2015',
-            'Cancers averted by\nroutine vaccination\n (%, 2025-2060)',
-            'Cancers averted by\ncatch-up campaign\n (%, 2025-2060)',
+            'Cancers averted by\nroutine vaccination\n (%, 2025-2100)',
+            'Cancers averted by\ncatch-up campaign\n (%, 2025-2100)',
         ]
 
         # Exposure by age and setting
