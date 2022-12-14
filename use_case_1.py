@@ -166,20 +166,21 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
     if debug: msg += ' IN DEBUG MODE'
     print(msg)
 
-    if exposure_years is None: exposure_years=[2015,2025,2060,2100]
+    if exposure_years is None: exposure_years=[2015,2025,2060]
 
     # Parameters
     pars = dict(
         n_agents        = [50e3,5e3][debug],
-        dt              = [0.5,1.0][debug],
+        dt              = [1.0,1.0][debug],
         start           = [1975,2000][debug],
-        end             = 2100,
+        end             = 2060,
         burnin          = [25,0][debug],
         condoms         = dict(m=0, c=0, o=0),
         debut           = debut[setting],
         mixing          = mixing[setting],
         use_multiscale  = False,
-        ms_agent_ratio  = 100,
+        ms_agent_ratio  = 1,
+        location        = 'kenya',
         rand_seed       = seed,
     )
 
@@ -195,6 +196,7 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
             # Routine vaccination
             routine_vx = hpv.routine_vx(
                 prob=.5,
+                sex=0,
                 start_year=2015,
                 product='bivalent',
                 eligibility=vax_eligible,
@@ -207,6 +209,7 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
             # One-off catch-up for people 10-24
             campaign_vx = hpv.campaign_vx(
                 prob=.5,
+                sex=0,
                 years=2025,
                 product='bivalent',
                 eligibility=vax_eligible,
@@ -296,7 +299,7 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug, e
                 ikw.append(sc.dcp(meta.vals))
                 ikw[-1].meta = meta
 
-    if exposure_years is None: exposure_years=[2015,2025,2060,2100]
+    if exposure_years is None: exposure_years=[2015,2025,2060]
 
     # Run sims in parallel
     sc.heading(f'Running {len(ikw)} scenario sims...')
@@ -395,7 +398,7 @@ if __name__ == '__main__':
 
     # Run sims in parallel
     if 'run_sims' in to_run:
-        sim = run_sims(settings=settings, verbose=0.1, debug=debug, exposure_years=[2015,2025,2060,2100])
+        sim = run_sims(settings=settings, verbose=0.1, debug=debug, exposure_years=[2015,2025,2060])
 
     # Run scenarios
     if 'run_scenarios' in to_run:
@@ -436,7 +439,7 @@ if __name__ == '__main__':
             sim = sc.loadobj(f'{resfolder}/{setting}.sim')
             sim.plot(do_save=True, fig_path=f'{figfolder}/{setting}_sim.png')
             sims[setting] = sim
-        dates = [2015, 2030, 2060, 2100]
+        dates = [2015, 2030, 2060]
 
         # Create figure, define plotting settings and labels
         set_font(size=20)
@@ -502,8 +505,8 @@ if __name__ == '__main__':
         quantiles = np.array([0.1,0.5,0.9])
         axtitles = [
             'Proportion exposed by age, 2015',
-            'Cancers averted by\nroutine vaccination\n (%, 2025-2100)',
-            'Cancers averted by\ncatch-up campaign\n (%, 2025-2100)',
+            'Cancers averted by\nroutine vaccination\n (%, 2025-2060)',
+            'Cancers averted by\ncatch-up campaign\n (%, 2025-2060)',
         ]
 
         # Exposure by age and setting
