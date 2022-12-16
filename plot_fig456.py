@@ -26,6 +26,9 @@ ng = sim['n_genotypes']
 genotype_pars = sim['genotype_pars']
 genotype_map = sim['genotype_map']
 
+genotype_pars['hrhpv']['dysp_rate'] = 1.1
+genotype_pars['hrhpv']['prog_rate'] = 0.07
+
 # Shorten duration names
 dur_precin = [genotype_pars[genotype_map[g]]['dur_precin'] for g in range(ng)]
 dur_dysp = [genotype_pars[genotype_map[g]]['dur_dysp'] for g in range(ng)]
@@ -209,117 +212,9 @@ def plot_fig4():
     pl.savefig(f"{ut.figfolder}/fig4.png", dpi=100)
 
 
-
-def plot_fig6():
-
-    shares = []
-    gtypes = []
-    noneshares, cin1shares, cin2shares, cin3shares, cancershares = [], [], [], [], []
-    longx = np.linspace(0.01, 12, 1000)
-    for g in range(ng):
-        sigma, scale = ut.lognorm_params(dur_precin[g]['par1'], dur_precin[g]['par2'])
-        rv = lognorm(sigma, 0, scale)
-        aa = np.diff(rv.cdf(longx))
-        bb = ut.logf1(longx, dysp_rate[g])[1:]
-        shares.append(np.dot(aa, bb))
-        gtypes.append(genotype_map[g].replace('hpv', ''))
-
-    for g in range(ng):
-        sigma, scale = ut.lognorm_params(dur_dysp[g]['par1'], dur_dysp[g]['par2'])
-        rv = lognorm(sigma, 0, scale)
-        dd = ut.logf1(longx, prog_rate[g])
-        indcin1 = sc.findinds(dd < .33)[-1]
-        if (dd > .33).any():
-            indcin2 = sc.findinds((dd > .33) & (dd < .67))[-1]
-        else:
-            indcin2 = indcin1
-        if (dd > .67).any():
-            indcin3 = sc.findinds((dd > .67) & (dd < 1))[-1]
-        else:
-            indcin3 = indcin2
-        if (dd > 1).any():
-            indcancer = sc.findinds(dd > 1)[-1]
-        else:
-            indcancer = indcin3
-
-        noneshares.append(1 - shares[g])
-        cin1shares.append(((rv.cdf(longx[indcin1]) - rv.cdf(longx[0])) * shares[g]))
-        cin2shares.append(((rv.cdf(longx[indcin2]) - rv.cdf(longx[indcin1])) * shares[g]))
-        cin3shares.append(((rv.cdf(longx[indcin3]) - rv.cdf(longx[indcin2])) * shares[g]))
-        cancershares.append(((rv.cdf(longx[indcancer]) - rv.cdf(longx[indcin3])) * shares[g]))
-
-    # create dataframes
-    years = np.arange(1, 13)
-    cin1_shares, cin2_shares, cin3_shares, cancer_shares = [], [], [], []
-    all_years = []
-    all_genotypes = []
-    for g in range(ng):
-        for year in years:
-            peaks = ut.logf1(year, hpu.sample(dist='normal', par1=prog_rate[g], par2=prog_rate_sd[g], size=n_samples))
-            cin1_shares.append(sum(peaks < 0.33) / n_samples)
-            cin2_shares.append(sum((peaks > 0.33) & (peaks < 0.67)) / n_samples)
-            cin3_shares.append(sum((peaks > 0.67) & (peaks < 1)) / n_samples)
-            cancer_shares.append(0)
-            all_years.append(year)
-            all_genotypes.append(genotype_map[g].replace('hpv', ''))
-    data = {'Year': all_years, 'Genotype': all_genotypes, 'CIN1': cin1_shares, 'CIN2': cin2_shares, 'CIN3': cin3_shares,
-            'Cancer': cancer_shares}
-    sharesdf = pd.DataFrame(data)
-
-    ut.set_font(size=20)
-    fig, ax = pl.subplots(2, 1, figsize=(16, 8))
-
-    ###### Share of women who develop each CIN grade
-    loc_array = np.array([-6,-5,-4,-3,-2,-1,1,2,3,4,5,6])
-    w = 0.07
-    for y in years:
-        la = loc_array[y - 1] * w + np.sign(loc_array[y - 1])*(-1)*w/2
-        bottom = np.zeros(ng)
-        for gn, grade in enumerate(['CIN1', 'CIN2', 'CIN3', 'Cancer']):
-            ydata = sharesdf[sharesdf['Year']==y][grade]
-            ax[0].bar(np.arange(1,ng+1)+la, ydata, width=w, color=cmap[gn], bottom=bottom, edgecolor='k', label=grade);
-            bottom = bottom + ydata
-
-    # ax[1,1].legend()
-    ax[0].set_title("Share of women with dysplasia by clinical grade, duration, and genotype")
-    ax[0].set_xlabel("")
-    ax[0].set_xticks(np.arange(ng) + 1)
-    ax[0].set_xticklabels(gtypes)
-
-    ##### Final outcomes for women
-    bottom = np.zeros(ng+1)
-    all_shares = [noneshares+[sum([j*1/ng for j in noneshares])],
-                  cin1shares+[sum([j*1/ng for j in cin1shares])],
-                  cin2shares+[sum([j*1/ng for j in cin2shares])],
-                  cin3shares+[sum([j*1/ng for j in cin3shares])],
-                  cancershares+[sum([j*1/ng for j in cancershares])],
-                  ]
-    for gn,grade in enumerate(['None', 'CIN1', 'CIN2', 'CIN3', 'Cancer']):
-        ydata = np.array(all_shares[gn])
-        if len(ydata.shape)>1: ydata = ydata[:,0]
-        color = cmap[gn-1] if gn>0 else 'gray'
-        ax[1].bar(np.arange(1,ng+2), ydata, color=color, bottom=bottom, label=grade)
-        bottom = bottom + ydata
-    ax[1].set_xticks(np.arange(ng+1) + 1)
-    ax[1].set_xticklabels(gtypes+['Average'])
-    ax[1].set_ylabel("")
-    ax[1].set_title("Eventual outcomes for women\n")
-    ax[1].legend(bbox_to_anchor =(0.5, 1.2),loc='upper center',ncol=5,frameon=False)
-
-    #
-    # plt.figtext(0.04, 0.85, 'A', fontweight='bold', fontsize=30)
-    # plt.figtext(0.51, 0.85, 'B', fontweight='bold', fontsize=30)
-
-    fig.tight_layout()
-    pl.savefig(f"{ut.figfolder}/fig6.png", dpi=100)
-
-
 #%% Run as a script
 if __name__ == '__main__':
 
     plot_fig4()
-    # plot_fig5()
-    # plot_fig6()
-
 
     print('Done.')
