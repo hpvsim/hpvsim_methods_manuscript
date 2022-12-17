@@ -8,27 +8,113 @@ import pandas as pd
 from scipy.stats import lognorm
 import numpy as np
 import sciris as sc
-
 import utils as ut
+import seaborn as sns
 
 
+class age_causal_infection_by_genotype(hpv.Analyzer):
+    '''
+    Determine the age at which people with cervical cancer were causally infected and
+    time spent between infection and cancer.
+    '''
+
+    def __init__(self, start_year=None, **kwargs):
+        super().__init__(**kwargs)
+        self.start_year = start_year
+        self.years = None
+
+    def initialize(self, sim):
+        super().initialize(sim)
+        self.years = sim.yearvec
+        if self.start_year is None:
+            self.start_year = sim['start']
+        self.ng = sim['n_genotypes']
+        self.genotypes = sim['genotypes']
+        self.genotype_map = sim['genotype_map']
+        self.age_causal = dict()
+        self.age_cancer = dict()
+        self.dwelltime = dict()
+        for genotype in self.genotypes:
+            self.age_causal[genotype] = []
+            self.age_cancer[genotype] = []
+            self.dwelltime[genotype] = dict()
+            for state in ['hpv', 'cin1', 'cin2', 'cin3', 'total']:
+                self.dwelltime[genotype][state] = []
+
+    def apply(self, sim):
+        if sim.yearvec[sim.t] >= self.start_year:
+            cancer_genotypes, cancer_inds = (sim.people.date_cancerous == sim.t).nonzero()
+            if len(cancer_inds):
+                for gtype in np.unique(cancer_genotypes):
+                    cancer_inds_gtype = cancer_inds[hpu.true(cancer_genotypes == gtype)]
+                    current_age = sim.people.age[cancer_inds_gtype]
+                    date_exposed = sim.people.date_exposed[gtype, cancer_inds_gtype]
+                    date_cin1 = sim.people.date_cin1[gtype, cancer_inds_gtype]
+                    date_cin2 = sim.people.date_cin2[gtype, cancer_inds_gtype]
+                    date_cin3 = sim.people.date_cin3[gtype, cancer_inds_gtype]
+                    hpv_time = (date_cin1 - date_exposed) * sim['dt']
+                    cin1_time = (date_cin2 - date_cin1) * sim['dt']
+                    cin2_time = (date_cin3 - date_cin2) * sim['dt']
+                    cin3_time = (sim.t - date_cin3) * sim['dt']
+                    total_time = (sim.t - date_exposed) * sim['dt']
+                    self.age_causal[self.genotype_map[gtype]] += (current_age - total_time).tolist()
+                    self.age_cancer[self.genotype_map[gtype]] += current_age.tolist()
+                    self.dwelltime[self.genotype_map[gtype]]['hpv'] += hpv_time.tolist()
+                    self.dwelltime[self.genotype_map[gtype]]['cin1'] += cin1_time.tolist()
+                    self.dwelltime[self.genotype_map[gtype]]['cin2'] += cin2_time.tolist()
+                    self.dwelltime[self.genotype_map[gtype]]['cin3'] += cin3_time.tolist()
+                    self.dwelltime[self.genotype_map[gtype]]['total'] += total_time.tolist()
+        return
+
+    def finalize(self, sim=None):
+        ''' Convert things to arrays '''
 
 
 #%% Plotting function
-def plot_fig4(pars=None):
+def plot_fig4(calib_pars=None):
     # Group genotypes
     genotypes = ['hpv16', 'hpv18', 'hrhpv']
 
-    # Create sim to get baseline prognoses parameters
-    sim = hpv.Sim(genotypes=genotypes)
+    dt = age_causal_infection_by_genotype(start_year=2010)
+    analyzers = [dt]
+
+    sim = hpv.Sim(n_agents=50e3, location='nigeria', genotypes=genotypes, analyzers=analyzers)
     sim.initialize()
+    # Create sim to get baseline prognoses parameters
+    if calib_pars is not None:
+        # calib_pars['genotype_pars'].hpv16.sero_prob = 0.8
+        # calib_pars['genotype_pars'].hpv18.sero_prob = 0.8
+        # calib_pars['genotype_pars'].hrhpv.sero_prob = 0.8
+        # calib_pars['genotype_pars'].hpv18['dur_dysp']['par1'] = 5
+        # calib_pars['genotype_pars'].hpv16['dur_dysp']['par1'] = 15
+        # calib_pars['genotype_pars'].hrhpv['dur_dysp']['par1'] = 20
+        sim.update_pars(calib_pars)
+
+    sim.run()
+    dt_res = sim.get_analyzer(age_causal_infection_by_genotype)
+    dfs = sc.autolist()
+    var_name_dict = {
+        'age_causal': 'Causal HPV infection',
+        'age_cancer': 'Cancer acquisition'
+    }
+    for gtype in genotypes:
+        gt_dfs = sc.autolist()
+        for val, call in zip(['age_causal', 'age_cancer'], [dt_res.age_causal, dt_res.age_cancer]):
+            dwelltime_df = pd.DataFrame()
+            dwelltime_df['age'] = call[gtype]
+            dwelltime_df['var'] = var_name_dict[val]
+            dwelltime_df['genotype'] = gtype
+            gt_dfs += dwelltime_df
+        gt_df = pd.concat(gt_dfs)
+        dfs += gt_df
+    dt_df = pd.concat(dfs)
 
     # Get parameters
     ng = sim['n_genotypes']
     genotype_map = sim['genotype_map']
 
-    if pars is not None:
-        genotype_pars = pars
+    if calib_pars is not None:
+        genotype_pars = calib_pars['genotype_pars']
     else:
         genotype_pars = sim['genotype_pars']
 
@@ -142,44 +228,14 @@ def plot_fig4(pars=None):
         cin3shares.append(((rv.cdf(longx[indcin3]) - rv.cdf(longx[indcin2])) * shares[g]))
         cancershares.append((num_cancers/len(dd)) * shares[g])
 
-
-    # # create dataframes
-    # years = np.arange(1, 13)
-    # cin1_shares, cin2_shares, cin3_shares, cancer_shares = [], [], [], []
-    # all_years = []
-    # all_genotypes = []
-    # for g in range(ng):
-    #     for year in years:
-    #         peaks = ut.logf1(year, hpu.sample(dist='normal', par1=prog_rate[g], par2=prog_rate_sd[g], size=n_samples))
-    #         cin1_shares.append(sum(peaks < 0.33) / n_samples)
-    #         cin2_shares.append(sum((peaks > 0.33) & (peaks < 0.67)) / n_samples)
-    #         cin3_shares.append(sum((peaks > 0.67)) / n_samples)
-    #         cancer_shares.append(0)
-    #         all_years.append(year)
-    #         all_genotypes.append(genotype_map[g].replace('hpv', ''))
-    # data = {'Year': all_years, 'Genotype': all_genotypes, 'CIN1': cin1_shares, 'CIN2': cin2_shares, 'CIN3': cin3_shares,
-    #         'Cancer': cancer_shares}
-    # sharesdf = pd.DataFrame(data)
-    #
-    # ai = 2
-    # ###### Share of women who develop each CIN grade
-    # loc_array = np.array([-6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6])
-    # w = 0.07
-    # for y in years:
-    #     la = loc_array[y - 1] * w + np.sign(loc_array[y - 1]) * (-1) * w / 2
-    #     bottom = np.zeros(ng)
-    #     for gn, grade in enumerate(['CIN1', 'CIN2', 'CIN3', 'Cancer']):
-    #         ydata = sharesdf[sharesdf['Year'] == y][grade]
-    #         ax[0,ai].bar(np.arange(1, ng + 1) + la, ydata, width=w, color=cmap[gn], bottom=bottom, edgecolor='k', label=grade)
-    #         bottom = bottom + ydata
-    #
-    # ax[0,ai].set_title("Share of women with dysplasia by clinical grade, duration, and genotype")
-    # ax[0,ai].set_xlabel("")
-    # ax[0,ai].set_xticks(np.arange(ng) + 1)
-    # ax[0,ai].set_xticklabels(gtypes)
-
-    ##### Final outcomes for women
     ai=2
+
+    sns.violinplot(data=dt_df, x='var', y='age', hue='genotype', ax=ax[0,ai])
+    ax[0,ai].set_xlabel("")
+    ax[0, ai].set_ylabel("Age")
+    ax[0,ai].set_xticklabels(['Causal HPV\ninfection', 'Cancer\nacquisition'])
+    sc.SIticks(ax[0, ai])
+
     bottom = np.zeros(ng + 1)
     all_shares = [noneshares + [sum([j * 1 / ng for j in noneshares])],
                   cin1shares + [sum([j * 1 / ng for j in cin1shares])],
@@ -196,15 +252,14 @@ def plot_fig4(pars=None):
     ax[1,ai].set_xticks(np.arange(ng + 1) + 1)
     ax[1,ai].set_xticklabels(gtypes + ['Average'])
     ax[1,ai].set_ylabel("")
-    ax[1,ai].set_title("Eventual outcomes for women\n")
     ax[1,ai].legend()
 
-    # pl.figtext(0.06, 0.94, 'A', fontweight='bold', fontsize=30)
-    # pl.figtext(0.375, 0.94, 'B', fontweight='bold', fontsize=30)
-    # pl.figtext(0.69, 0.94, 'C', fontweight='bold', fontsize=30)
-    # pl.figtext(0.06, 0.51, 'D', fontweight='bold', fontsize=30)
-    # pl.figtext(0.375, 0.51, 'E', fontweight='bold', fontsize=30)
-    # pl.figtext(0.69, 0.51, 'F', fontweight='bold', fontsize=30)
+    pl.figtext(0.06, 0.94, 'A', fontweight='bold', fontsize=30)
+    pl.figtext(0.375, 0.94, 'C', fontweight='bold', fontsize=30)
+    pl.figtext(0.69, 0.94, 'E', fontweight='bold', fontsize=30)
+    pl.figtext(0.06, 0.51, 'B', fontweight='bold', fontsize=30)
+    pl.figtext(0.375, 0.51, 'D', fontweight='bold', fontsize=30)
+    pl.figtext(0.69, 0.51, 'F', fontweight='bold', fontsize=30)
 
     fig.tight_layout()
     pl.savefig(f"{ut.figfolder}/fig4.png", dpi=100)
@@ -216,6 +271,6 @@ if __name__ == '__main__':
     file = f'nigeria_pars.obj'
     calib_pars = sc.loadobj(file)
 
-    plot_fig4(pars=calib_pars['genotype_pars'])
+    plot_fig4(calib_pars=calib_pars)
 
     print('Done.')
