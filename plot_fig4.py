@@ -82,12 +82,9 @@ def plot_fig4(calib_pars=None):
     sim.initialize()
     # Create sim to get baseline prognoses parameters
     if calib_pars is not None:
-        # calib_pars['genotype_pars'].hpv16.sero_prob = 0.8
-        # calib_pars['genotype_pars'].hpv18.sero_prob = 0.8
-        # calib_pars['genotype_pars'].hrhpv.sero_prob = 0.8
-        # calib_pars['genotype_pars'].hpv18['dur_dysp']['par1'] = 5
-        # calib_pars['genotype_pars'].hpv16['dur_dysp']['par1'] = 15
-        # calib_pars['genotype_pars'].hrhpv['dur_dysp']['par1'] = 20
+        # calib_pars['genotype_pars'].hpv16['dur_dysp']['par1'] = 12
+        # calib_pars['genotype_pars'].hrhpv['dur_dysp']['par1'] = 15
+        # calib_pars['genotype_pars'].hpv18['rel_beta'] = 0.5
         sim.update_pars(calib_pars)
 
     sim.run()
@@ -109,25 +106,20 @@ def plot_fig4(calib_pars=None):
         dfs += gt_df
     dt_df = pd.concat(dfs)
 
-    # Get parameters
-    ng = sim['n_genotypes']
-    genotype_map = sim['genotype_map']
+    type_df = pd.DataFrame({'Low grade lesion': sim.results['low_grade_genotype_dist'].values[:,-1],
+                            'High grade lesion': sim.results['high_grade_genotype_dist'].values[:, -1],
+                            'Cancer': sim.results['cancerous_genotype_dist'].values[:, -1]},
+                 index=['hpv16', 'hpv18', 'hrhpv']).T
 
     if calib_pars is not None:
         genotype_pars = calib_pars['genotype_pars']
     else:
         genotype_pars = sim['genotype_pars']
 
-    # Shorten duration names
-    dur_precin = [genotype_pars[genotype_map[g]]['dur_precin'] for g in range(ng)]
-    dur_dysp = [genotype_pars[genotype_map[g]]['dur_dysp'] for g in range(ng)]
-    dysp_rate = [genotype_pars[genotype_map[g]]['dysp_rate'] for g in range(ng)]
-    prog_rate = [genotype_pars[genotype_map[g]]['prog_rate'] for g in range(ng)]
-    cancer_prob = [genotype_pars[genotype_map[g]]['cancer_prob'] for g in range(ng)]
-
     ut.set_font(size=20)
-    # Set common attributes
-    colors = sc.gridcolors(ng)
+    # set palette
+    import itertools
+    palette = itertools.cycle(sns.color_palette())
     n_samples = 10
     cmap = pl.cm.Oranges([0.25, 0.5, 0.75, 1])
 
@@ -139,15 +131,16 @@ def plot_fig4(calib_pars=None):
         sigma, scale = ut.lognorm_params(genotype_pars[gtype]['dur_precin']['par1'],
                                          genotype_pars[gtype]['dur_precin']['par2'])
         rv = lognorm(sigma, 0, scale)
-        ax[0, 0].plot(x, rv.pdf(x), color=colors[pn], lw=2, label=gtype.upper())
-        ax[1, 0].plot(x, ut.logf1(x, genotype_pars[gtype]['dysp_rate']), color=colors[pn], lw=2, label=gtype.upper())
+        ax[0, 0].plot(x, rv.pdf(x), lw=2, label=gtype.upper())
+        ax[1, 0].plot(x, ut.logf1(x, genotype_pars[gtype]['dysp_rate']), lw=2, label=gtype.upper())
         pn += 1
 
         ax[1, 0].set_xlabel("Duration of infection prior to\ncontrol/clearance/dysplasia (months)")
         for row in [0, 1]:
             ax[row, 0].set_ylabel("")
             ax[row, 0].grid()
-            ax[row, 0].set_xticklabels([0, 0, 12, 24])
+            ax[row, 0].set_xticks(np.arange(3))
+            ax[row, 0].set_xticklabels([0, 12, 24])
     ax[0, 0].set_ylabel("Frequency")
     ax[1, 0].set_ylabel("Probability of developing\ndysplasia")
     ax[0, 0].set_xlabel("Duration of infection prior to\ncontrol/clearance/dysplasia (months)")
@@ -161,14 +154,14 @@ def plot_fig4(calib_pars=None):
         sigma, scale = ut.lognorm_params(genotype_pars[gtype]['dur_dysp']['par1'],
                                          genotype_pars[gtype]['dur_dysp']['par2'])
         rv = lognorm(sigma, 0, scale)
-        ax[0, ai].plot(thisx, rv.pdf(thisx), color=colors[pn], lw=2, label=gtype.upper())
-        ax[1, ai].plot(thisx, ut.logf1(thisx, genotype_pars[gtype]['prog_rate']), color=colors[pn], lw=2,
+        ax[0, ai].plot(thisx, rv.pdf(thisx), lw=2, label=gtype.upper())
+        ax[1, ai].plot(thisx, ut.logf1(thisx, genotype_pars[gtype]['prog_rate']), lw=2,
                        label=gtype.upper())
         for year in range(1, 26):
             peaks = ut.logf1(year, hpu.sample(dist='normal', par1=genotype_pars[gtype]['prog_rate'],
                                               par2=genotype_pars[gtype]['prog_rate_sd'], size=n_samples))
             if pn == 1:
-                ax[1, ai].plot([year] * n_samples, peaks, color=colors[pn], lw=0, marker='o', alpha=0.5)
+                ax[1, ai].plot([year] * n_samples, peaks, color=next(palette), lw=0, marker='o', alpha=0.5)
         pn += 1
 
         ax[0, ai].set_ylabel("")
@@ -190,44 +183,6 @@ def plot_fig4(calib_pars=None):
         ax[1, ai].text(-0.3, 0.4, 'CIN2', rotation=90)
         ax[1, ai].text(-0.3, 0.73, 'CIN3', rotation=90)
 
-    shares = []
-    gtypes = []
-    noneshares, cin1shares, cin2shares, cin3shares, cancershares = [], [], [], [], []
-    longx = np.linspace(0.01, 25, 1000)
-    for g in range(ng):
-        sigma, scale = ut.lognorm_params(dur_precin[g]['par1'], dur_precin[g]['par2'])
-        rv = lognorm(sigma, 0, scale)
-        aa = np.diff(rv.cdf(longx))
-        bb = ut.logf1(longx, dysp_rate[g])[1:]
-        shares.append(np.dot(aa, bb))
-        gtypes.append(genotype_map[g].replace('hpv', ''))
-
-    for g in range(ng):
-        sigma, scale = ut.lognorm_params(dur_dysp[g]['par1'], dur_dysp[g]['par2'])
-        rv = lognorm(sigma, 0, scale)
-        dd = ut.logf1(longx, prog_rate[g])
-        indcin1 = sc.findinds(dd < .33)[-1]
-        if (dd > .33).any():
-            indcin2 = sc.findinds((dd > .33) & (dd < .67))[-1]
-        else:
-            indcin2 = indcin1
-        if (dd > .67).any():
-            num_cancers = len(hpu.true(hpu.n_binomial(cancer_prob[g], len(sc.findinds((dd > .67))))))
-            if num_cancers:
-                indcin3 = sc.findinds((dd > .67) )[-num_cancers]
-            else:
-                indcin3 = sc.findinds((dd > .67) )[-1]
-
-        else:
-            indcin3 = indcin2
-            num_cancers = 0
-
-        noneshares.append(1 - shares[g])
-        cin1shares.append(((rv.cdf(longx[indcin1]) - rv.cdf(longx[0])) * shares[g]))
-        cin2shares.append(((rv.cdf(longx[indcin2]) - rv.cdf(longx[indcin1])) * shares[g]))
-        cin3shares.append(((rv.cdf(longx[indcin3]) - rv.cdf(longx[indcin2])) * shares[g]))
-        cancershares.append((num_cancers/len(dd)) * shares[g])
-
     ai=2
 
     sns.violinplot(data=dt_df, x='var', y='age', hue='genotype', ax=ax[0,ai])
@@ -236,23 +191,11 @@ def plot_fig4(calib_pars=None):
     ax[0,ai].set_xticklabels(['Causal HPV\ninfection', 'Cancer\nacquisition'])
     sc.SIticks(ax[0, ai])
 
-    bottom = np.zeros(ng + 1)
-    all_shares = [noneshares + [sum([j * 1 / ng for j in noneshares])],
-                  cin1shares + [sum([j * 1 / ng for j in cin1shares])],
-                  cin2shares + [sum([j * 1 / ng for j in cin2shares])],
-                  cin3shares + [sum([j * 1 / ng for j in cin3shares])],
-                  cancershares + [sum([j * 1 / ng for j in cancershares])],
-                  ]
-    for gn, grade in enumerate(['No dysplasia', 'CIN1', 'CIN2', 'CIN3', 'Cancer']):
-        ydata = np.array(all_shares[gn])
-        if len(ydata.shape) > 1: ydata = ydata[:, 0]
-        color = cmap[gn - 1] if gn > 0 else 'gray'
-        ax[1,ai].bar(np.arange(1, ng + 2), ydata, color=color, bottom=bottom, label=grade)
-        bottom = bottom + ydata
-    ax[1,ai].set_xticks(np.arange(ng + 1) + 1)
-    ax[1,ai].set_xticklabels(gtypes + ['Average'])
-    ax[1,ai].set_ylabel("")
-    ax[1,ai].legend()
+    type_df.plot(kind='bar', stacked=True, ax=ax[1,ai])
+    ax[1,ai].set_xlabel("HPV type distribution")
+    ax[1, ai].set_ylabel("")
+    ax[1,ai].set_xticklabels(['Low-grade\nlesion', 'High-grade\nlesion', 'Cancer'])
+    sc.SIticks(ax[0, ai])
 
     pl.figtext(0.06, 0.94, 'A', fontweight='bold', fontsize=30)
     pl.figtext(0.375, 0.94, 'C', fontweight='bold', fontsize=30)
