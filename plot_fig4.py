@@ -35,6 +35,8 @@ def plot_fig4(calib_pars=None):
         calib_pars['genotype_pars'].hrhpv['dur_dysp']['par1'] = 20
         calib_pars['genotype_pars'].hpv18['rel_beta'] = 1.3
         calib_pars['genotype_pars'].hrhpv['cancer_prob'] = 0.01
+        calib_pars['genotype_pars'].hpv16['prog_rate_sd'] = 0.01
+        calib_pars['genotype_pars'].hrhpv['prog_rate_sd'] = 0.01
         sim.update_pars(calib_pars)
 
     sim.run()
@@ -57,8 +59,7 @@ def plot_fig4(calib_pars=None):
 
     ut.set_font(size=20)
     # set palette
-    import itertools
-    palette = itertools.cycle(sns.color_palette())
+    colors = sc.gridcolors(10)
     n_samples = 10
     cmap = pl.cm.Oranges([0.25, 0.5, 0.75, 1])
 
@@ -66,12 +67,12 @@ def plot_fig4(calib_pars=None):
     pn = 0
     x = np.linspace(0.01, 2, 200)
 
-    for gtype in genotypes:
+    for gi, gtype in enumerate(genotypes):
         sigma, scale = ut.lognorm_params(genotype_pars[gtype]['dur_precin']['par1'],
                                          genotype_pars[gtype]['dur_precin']['par2'])
         rv = lognorm(sigma, 0, scale)
-        ax[0, 0].plot(x, rv.pdf(x), lw=2, label=gtype.upper())
-        ax[1, 0].plot(x, ut.logf1(x, genotype_pars[gtype]['dysp_rate']), lw=2, label=gtype.upper())
+        ax[0, 0].plot(x, rv.pdf(x), color=colors[gi], lw=2, label=gtype.upper())
+        ax[1, 0].plot(x, ut.logf1(x, genotype_pars[gtype]['dysp_rate']), color=colors[gi], lw=2, label=gtype.upper())
         pn += 1
 
         ax[1, 0].set_xlabel("Duration of infection prior to\ncontrol/clearance/dysplasia (months)")
@@ -88,19 +89,18 @@ def plot_fig4(calib_pars=None):
     thisx = np.linspace(0.01, 25, 100)
 
     # Durations and severity of dysplasia
-    for gtype in genotypes:
+    for gi, gtype in enumerate(genotypes):
         ai=1
         sigma, scale = ut.lognorm_params(genotype_pars[gtype]['dur_dysp']['par1'],
                                          genotype_pars[gtype]['dur_dysp']['par2'])
         rv = lognorm(sigma, 0, scale)
-        ax[0, ai].plot(thisx, rv.pdf(thisx), lw=2, label=gtype.upper())
-        ax[1, ai].plot(thisx, ut.logf1(thisx, genotype_pars[gtype]['prog_rate']), lw=2,
+        ax[0, ai].plot(thisx, rv.pdf(thisx), color=colors[gi], lw=2, label=gtype.upper())
+        ax[1, ai].plot(thisx, ut.logf1(thisx, genotype_pars[gtype]['prog_rate']), color=colors[gi], lw=2,
                        label=gtype.upper())
         for year in range(1, 26):
             peaks = ut.logf1(year, hpu.sample(dist='normal', par1=genotype_pars[gtype]['prog_rate'],
                                               par2=genotype_pars[gtype]['prog_rate_sd'], size=n_samples))
-            if pn == 1:
-                ax[1, ai].plot([year] * n_samples, peaks, color=next(palette), lw=0, marker='o', alpha=0.5)
+            ax[1, ai].plot([year] * n_samples, peaks, color=colors[gi], lw=0, marker='o', alpha=0.5)
         pn += 1
 
         ax[0, ai].set_ylabel("")
