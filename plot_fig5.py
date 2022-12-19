@@ -145,11 +145,11 @@ def plot_fig5(calib_pars=None):
     sim.initialize()
     # Create sim to get baseline prognoses parameters
     if calib_pars is not None:
-        calib_pars['genotype_pars'].hrhpv['dur_dysp']['par1'] = 25
-        calib_pars['genotype_pars'].hpv16['dur_dysp']['par1'] = 15
-        calib_pars['genotype_pars'].hpv16['prog_rate'] = 0.078
-        calib_pars['genotype_pars'].hpv16['prog_rate_sd'] = 0.015
-        calib_pars['genotype_pars'].hrhpv['prog_rate_sd'] = 0.015
+        # calib_pars['genotype_pars'].hrhpv['dur_dysp']['par1'] = 25
+        # calib_pars['genotype_pars'].hpv16['dur_dysp']['par1'] = 15
+        # calib_pars['genotype_pars'].hpv16['prog_rate'] = 0.078
+        # calib_pars['genotype_pars'].hpv16['prog_rate_sd'] = 0.015
+        # calib_pars['genotype_pars'].hrhpv['prog_rate_sd'] = 0.015
         sim.update_pars(calib_pars)
 
     sim.run()
