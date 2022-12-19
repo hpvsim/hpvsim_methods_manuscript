@@ -127,6 +127,9 @@ def plot_fig5(calib_pars=None):
                 timepoints=['2020'],
                 edges=np.array([0., 15., 20., 25., 30., 40., 45., 50., 55., 60., 65., 70., 75., 80., 100.]),
             ),
+            cancers=sc.objdict(
+                timepoints=['2020'],
+                edges=np.array([0., 15., 20., 25., 30., 40., 45., 50., 55., 60., 65., 70., 75., 80., 100.]),            )
         )
     )
     analyzers = [dt, pe, az]
@@ -145,22 +148,27 @@ def plot_fig5(calib_pars=None):
     sim.initialize()
     # Create sim to get baseline prognoses parameters
     if calib_pars is not None:
-        # calib_pars['genotype_pars'].hrhpv['dur_dysp']['par1'] = 25
-        # calib_pars['genotype_pars'].hpv16['dur_dysp']['par1'] = 15
-        # calib_pars['genotype_pars'].hpv16['prog_rate'] = 0.078
-        # calib_pars['genotype_pars'].hpv16['prog_rate_sd'] = 0.015
-        # calib_pars['genotype_pars'].hrhpv['prog_rate_sd'] = 0.015
+        calib_pars['genotype_pars'].hpv18['dur_dysp']['par1'] = 3.4
+        calib_pars['genotype_pars'].hpv18['cancer_prob'] = 0.098
+        calib_pars['genotype_pars'].hpv16['cancer_prob'] = 0.025 #0.027
+        calib_pars['genotype_pars'].hpv18['prog_rate'] = 0.7
+        calib_pars['genotype_pars'].hrhpv['cancer_prob'] = 0.001
+        calib_pars['genotype_pars'].hrhpv['dur_dysp']['par1'] = 26
         sim.update_pars(calib_pars)
 
     sim.run()
     sim.plot()
 
     az_res = sim.get_analyzer(hpv.age_results)
-    f, ax = pl.subplots()
+    f, ax = pl.subplots(1, 2)
+    data = pd.read_csv('nigeria_cancer_cases.csv')
     for gi, gtype in enumerate(genotypes):
-        ax.plot(az_res.results['cancers_by_genotype']['bins'],
+        ax[0].plot(az_res.results['cancers_by_genotype']['bins'],
                 az_res.results['cancers_by_genotype']['2020.0'][:,gi], label=gtype)
-    ax.legend()
+    ax[1].plot(az_res.results['cancers']['bins'], az_res.results['cancers']['2020.0'], label='Model')
+    data.plot(x='age', y='value', label='data', ax=ax[1])
+    ax[0].legend()
+    ax[1].legend()
     f.tight_layout()
     f.show()
 
@@ -233,7 +241,7 @@ def plot_fig5(calib_pars=None):
     ax.set_title('Prop exposed to HPV')
     ax.set_xlabel('Age')
     f.tight_layout()
-    f.show()
+    # f.show()
 
 
 #%% Run as a script
