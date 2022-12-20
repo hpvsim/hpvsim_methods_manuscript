@@ -232,8 +232,8 @@ def plot_fig6():
 #%% Run as a script
 if __name__ == '__main__':
 
-    # plot_fig4()
-    # plot_fig5()
+    plot_fig4()
+    plot_fig5()
     plot_fig6()
 
 

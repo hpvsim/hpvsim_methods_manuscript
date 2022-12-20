@@ -2,22 +2,8 @@
 This script runs Use Case 1 from the HPVsim methods manuscript.
 
 *Motivation*
-Prophylactic vaccination is one of the most essential and effective pillars of
-the current public health response to HPV/cervical cancer. In the majority of
-countries where prophylactic vaccination is routinely administered, it is
-targeted to girls aged 9-14, with the intention being to vaccinate prior to
-them being exposed to HPV (i.e. before they become sexually active).
-
-Here we investigate the potential impact of expanding the age of vaccination
-(EAV) in three different country archetypes that vary according to the average
-age of first sex for girls (AFS) and the rates of sexual mixing between younger
-women and older men, quantified by the average sexual partner age difference (SPAD):
- 1. AFS = 18, SPAD = 1      --- most young girls (<18) will not have been exposed
- 2. AFS = 18, SPAD = 10     --- more girls have been exposed via older partners
- 3. AFS = 16, SPAD = 1      --- more girls exposed via younger AFS
-
-*Hypothesis*
-EAV will have the highest impact in Setting 1, followed by Setting 2, then 3.
+Here we investigate the potential impact of changing from a screen-and-treat algorithm
+to a screen-triage-treat algorithm
 """
 
 import hpvsim as hpv
