@@ -148,8 +148,7 @@ def plot_fig4(calib_pars=None):
         if (dd > .67).any():
             cin3_inds = sc.findinds((dd>0.67))
             cin3_dur_dysp_times = longx[cin3_inds]
-            cin3_times = cin3_dur_dysp_times - sc.randround(hpu.invlogf1(0.67, prog_rate[g]))
-            cin3_times[cin3_times < 0] = 0
+            cin3_times = cin3_dur_dysp_times - hpu.invlogf1(0.67, prog_rate[g])
             cancer_probs = 1 - (1 - cancer_prob[g]) ** cin3_times
             n_cancer = len(hpu.true(hpu.n_binomial(cancer_probs, len(cin3_inds))))
             n_cin3 = len(cin3_inds) - n_cancer
