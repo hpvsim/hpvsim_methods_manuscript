@@ -155,7 +155,7 @@ def run_calib_tool(calib_pars=None):
         calib_pars['genotype_pars'].hpv16['dur_dysp']['par1'] = 13
         calib_pars['genotype_pars'].hrhpv['dur_dysp']['par1'] = 18
         calib_pars['genotype_pars'].hpv18['rel_beta'] = 1.25
-        calib_pars['genotype_pars'].hpv18['cancer_prob'] = 0.13
+        calib_pars['genotype_pars'].hpv18['cancer_prob'] = 0.15
         calib_pars['genotype_pars'].hpv18['prog_rate'] = 0.9
         calib_pars['genotype_pars'].hrhpv['prog_rate'] = 0.08
         sim.update_pars(calib_pars)
