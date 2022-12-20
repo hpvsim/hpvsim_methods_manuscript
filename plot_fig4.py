@@ -61,7 +61,7 @@ def plot_fig4(calib_pars=None):
     n_samples = 10
     cmap = pl.cm.Oranges([0.25, 0.5, 0.75, 1])
 
-    fig, ax = pl.subplots(3, 2, figsize=(12, 16))
+    fig, ax = pl.subplots(2, 3, figsize=(16, 10))
     pn = 0
     x = np.linspace(0.01, 2, 200)
 
@@ -153,15 +153,22 @@ def plot_fig4(calib_pars=None):
             cancer_probs = 1 - (1 - cancer_prob[g]) ** cin3_times
             n_cancer = len(hpu.true(hpu.n_binomial(cancer_probs, len(cin3_inds))))
             n_cin3 = len(cin3_inds) - n_cancer
+            if n_cancer:
+                indcin3 = sc.findinds((dd > .67) )[-n_cin3]
+            else:
+                indcin3 = sc.findinds((dd > .67) )[-1]
+
         else:
-            n_cancer = 0
+            indcin3 = indcin2
             n_cin3 = 0
 
         noneshares.append(1 - shares[g])
-        cin1shares.append(((n_cin1/len(dd)) * shares[g]))
-        cin2shares.append((((n_cin2/len(dd))) * shares[g]))
-        cin3shares.append((((n_cin3/len(dd))) * shares[g]))
-        cancershares.append((n_cancer/len(dd)) * shares[g])
+        cin1shares.append(((rv.cdf(longx[indcin1]) - rv.cdf(longx[0])) * shares[g]))
+        cin2shares.append(((rv.cdf(longx[indcin2]) - rv.cdf(longx[indcin1])) * shares[g]))
+        cin3shares.append(((rv.cdf(longx[indcin3]) - rv.cdf(longx[indcin2])) * shares[g]))
+        cancershares.append((n_cin3/len(dd)) * shares[g])
+
+    ai=2
 
     bottom = np.zeros(ng)
     all_shares = [noneshares,
@@ -174,12 +181,12 @@ def plot_fig4(calib_pars=None):
         ydata = np.array(all_shares[gn])
         if len(ydata.shape) > 1: ydata = ydata[:, 0]
         color = cmap[gn - 1] if gn > 0 else 'gray'
-        ax[2,0].bar(np.arange(1, ng + 1), ydata, color=color, bottom=bottom, label=grade)
+        ax[1,ai].bar(np.arange(1, ng + 1), ydata, color=color, bottom=bottom, label=grade)
         bottom = bottom + ydata
-    ax[2,0].set_xticks(np.arange(1,ng + 1))
-    ax[2,0].set_xticklabels(gtypes)
-    ax[2,0].set_ylabel("")
-    ax[2,0].legend(bbox_to_anchor=(1.05, 1))
+    ax[1,ai].set_xticks(np.arange(1,ng + 1))
+    ax[1,ai].set_xticklabels(gtypes)
+    ax[1,ai].set_ylabel("")
+    ax[1,ai].legend()
 
 
     pl.figtext(0.06, 0.94, 'A', fontweight='bold', fontsize=30)
