@@ -16,30 +16,28 @@ import seaborn as sns
 def plot_fig4(calib_pars=None):
     # Group genotypes
     genotypes = ['hpv16', 'hpv18', 'hrhpv']
-    dt = hpv.dwelltime(start_year=2000)
-    analyzers = [dt]
-    sim = hpv.Sim(
-        n_agents=50e3,
-        dt=0.5,
-        location='nigeria',
-        start=1950,
-        end=2020,
-        condoms=dict(m=0.01, c=0.2, o=0.1),
-        genotypes=genotypes,
-        analyzers=analyzers,
-        ms_agent_ratio=100,
-    )
+    sim = hpv.Sim(genotypes=genotypes)
     sim.initialize()
     # Create sim to get baseline prognoses parameters
     if calib_pars is not None:
-        calib_pars['genotype_pars'].hpv18['dur_dysp']['par2'] = 1.5
-        calib_pars['genotype_pars'].hpv16['dur_dysp']['par2'] = 6
-        calib_pars['genotype_pars'].hrhpv['dur_dysp']['par2'] = 10
-        # calib_pars['genotype_pars'].hpv18['cancer_prob'] = 0.14
-        # calib_pars['genotype_pars'].hpv18['prog_rate'] = 0.9
+        ## hpv 16 pars
+        calib_pars['genotype_pars'].hpv16['dur_dysp']['par2'] = 3.8  # 4
+        calib_pars['genotype_pars'].hpv16['dur_dysp']['par1'] = 7.25  # 13
+        calib_pars['genotype_pars'].hpv16['prog_rate'] = 0.17  # 0.099
+        calib_pars['genotype_pars'].hpv16['cancer_prob'] = 0.022  # 0.017
+
+        ## hpv 18 pars
+        calib_pars['genotype_pars'].hpv18['dur_dysp']['par2'] = 0.75
+        calib_pars['genotype_pars'].hpv18['rel_beta'] = 1.22
+        calib_pars['genotype_pars'].hpv18['cancer_prob'] = 0.13
+
+        ## hr hpv pars
+        calib_pars['genotype_pars'].hrhpv['dur_dysp']['par2'] = 8
+        calib_pars['genotype_pars'].hrhpv['rel_beta'] = 0.75
+        calib_pars['genotype_pars'].hrhpv['cancer_prob'] = 0.0026
+
         sim.update_pars(calib_pars)
 
-    # sim.run()
 
     # Get parameters
     ng = sim['n_genotypes']
@@ -63,7 +61,7 @@ def plot_fig4(calib_pars=None):
     n_samples = 10
     cmap = pl.cm.Oranges([0.25, 0.5, 0.75, 1])
 
-    fig, ax = pl.subplots(2, 3, figsize=(16, 10))
+    fig, ax = pl.subplots(3, 2, figsize=(12, 16))
     pn = 0
     x = np.linspace(0.01, 2, 200)
 
@@ -140,69 +138,48 @@ def plot_fig4(calib_pars=None):
         rv = lognorm(sigma, 0, scale)
         dd = ut.logf1(longx, prog_rate[g])
         indcin1 = sc.findinds(dd < .33)[-1]
+        n_cin1 = indcin1
         if (dd > .33).any():
             indcin2 = sc.findinds((dd > .33) & (dd < .67))[-1]
+            n_cin2 = indcin2 - indcin1
         else:
             indcin2 = indcin1
+            n_cin2 = 0
         if (dd > .67).any():
-            num_cancers = len(hpu.true(hpu.n_binomial(cancer_prob[g], len(sc.findinds((dd > .67))))))
-            if num_cancers:
-                indcin3 = sc.findinds((dd > .67) )[-num_cancers]
-            else:
-                indcin3 = sc.findinds((dd > .67) )[-1]
-
+            cin3_inds = sc.findinds((dd>0.67))
+            cin3_dur_dysp_times = longx[cin3_inds]
+            cin3_times = cin3_dur_dysp_times - sc.randround(hpu.invlogf1(0.67, prog_rate[g]))
+            cin3_times[cin3_times < 0] = 0
+            cancer_probs = 1 - (1 - cancer_prob[g]) ** cin3_times
+            n_cancer = len(hpu.true(hpu.n_binomial(cancer_probs, len(cin3_inds))))
+            n_cin3 = len(cin3_inds) - n_cancer
         else:
-            indcin3 = indcin2
-            num_cancers = 0
+            n_cancer = 0
+            n_cin3 = 0
 
         noneshares.append(1 - shares[g])
-        cin1shares.append(((rv.cdf(longx[indcin1]) - rv.cdf(longx[0])) * shares[g]))
-        cin2shares.append(((rv.cdf(longx[indcin2]) - rv.cdf(longx[indcin1])) * shares[g]))
-        cin3shares.append(((rv.cdf(longx[indcin3]) - rv.cdf(longx[indcin2])) * shares[g]))
-        cancershares.append((num_cancers/len(dd)) * shares[g])
+        cin1shares.append(((n_cin1/len(dd)) * shares[g]))
+        cin2shares.append((((n_cin2/len(dd))) * shares[g]))
+        cin3shares.append((((n_cin3/len(dd))) * shares[g]))
+        cancershares.append((n_cancer/len(dd)) * shares[g])
 
-    # dt_res = sim.get_analyzer(hpv.dwelltime)
-    # dfs = sc.autolist()
-    # for gtype in genotypes:
-    #     gt_dfs = sc.autolist()
-    #     for val, call in zip(['hpv', 'cin1', 'cin2', 'cin3'], [dt_res.dwelltime[gtype]['hpv'], dt_res.dwelltime[gtype]['cin1'],
-    #                                                             dt_res.dwelltime[gtype]['cin2'], dt_res.dwelltime[gtype]['cin3']]):
-    #         dwelltime_df = pd.DataFrame()
-    #         dwelltime_df['years'] = call
-    #         dwelltime_df['var'] = val
-    #         dwelltime_df['genotype'] = gtype
-    #         gt_dfs += dwelltime_df
-    #     gt_df = pd.concat(gt_dfs)
-    #     dfs += gt_df
-    # dt_df = pd.concat(dfs)
-    #
-    # ai=2
-    #
-    # sns.violinplot(data=dt_df, x='var', y='years', hue='genotype', ax=ax[0,ai])
-    # ax[0,ai].set_xlabel("Dwelltime in health state")
-    # ax[0,ai].set_ylabel("Years")
-    # ax[0,ai].set_xticklabels(['HPV', 'CIN1', 'CIN2', 'CIN3'])
-    # sc.SIticks(ax[0,ai])
-
-    ai=2
-
-    bottom = np.zeros(ng + 1)
-    all_shares = [noneshares + [sum([j * 1 / ng for j in noneshares])],
-                  cin1shares + [sum([j * 1 / ng for j in cin1shares])],
-                  cin2shares + [sum([j * 1 / ng for j in cin2shares])],
-                  cin3shares + [sum([j * 1 / ng for j in cin3shares])],
-                  cancershares + [sum([j * 1 / ng for j in cancershares])],
+    bottom = np.zeros(ng)
+    all_shares = [noneshares,
+                  cin1shares,
+                  cin2shares,
+                  cin3shares,
+                  cancershares,
                   ]
     for gn, grade in enumerate(['No dysplasia', 'CIN1', 'CIN2', 'CIN3', 'Cancer']):
         ydata = np.array(all_shares[gn])
         if len(ydata.shape) > 1: ydata = ydata[:, 0]
         color = cmap[gn - 1] if gn > 0 else 'gray'
-        ax[1,ai].bar(np.arange(1, ng + 2), ydata, color=color, bottom=bottom, label=grade)
+        ax[2,0].bar(np.arange(1, ng + 1), ydata, color=color, bottom=bottom, label=grade)
         bottom = bottom + ydata
-    ax[1,ai].set_xticks(np.arange(ng + 1) + 1)
-    ax[1,ai].set_xticklabels(gtypes + ['Average'])
-    ax[1,ai].set_ylabel("")
-    ax[1,ai].legend()
+    ax[2,0].set_xticks(np.arange(1,ng + 1))
+    ax[2,0].set_xticklabels(gtypes)
+    ax[2,0].set_ylabel("")
+    ax[2,0].legend(bbox_to_anchor=(1.05, 1))
 
 
     pl.figtext(0.06, 0.94, 'A', fontweight='bold', fontsize=30)
@@ -221,6 +198,6 @@ if __name__ == '__main__':
     file = f'nigeria_pars.obj'
     calib_pars = sc.loadobj(file)
 
-    plot_fig4(calib_pars=calib_pars)
+    plot_fig4()
 
     print('Done.')
