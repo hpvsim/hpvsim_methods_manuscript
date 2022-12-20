@@ -1,5 +1,5 @@
 """
-This script produces figure 5 of the HPVsim methods paper, showing the natural history
+This script is used for running calibration tool
 """
 import hpvsim as hpv
 import hpvsim.utils as hpu
@@ -114,7 +114,7 @@ class age_causal_infection_by_genotype(hpv.Analyzer):
 
 
 #%% Plotting function
-def plot_fig5(calib_pars=None):
+def run_calib_tool(calib_pars=None):
     # Group genotypes
     genotypes = ['hpv16', 'hpv18', 'hrhpv']
 
@@ -132,7 +132,7 @@ def plot_fig5(calib_pars=None):
                 edges=np.array([0., 15., 20., 25., 30., 40., 45., 50., 55., 60., 65., 70., 75., 80., 100.]),            )
         )
     )
-    analyzers = [dt]
+    analyzers = [dt, pe, az]
 
     sim = hpv.Sim(
         n_agents=50e3,
@@ -149,67 +149,114 @@ def plot_fig5(calib_pars=None):
     # Create sim to get baseline prognoses parameters
     if calib_pars is not None:
         print(calib_pars)
-        calib_pars['genotype_pars'].hpv18['dur_dysp']['par2'] = 1.5
+        calib_pars['genotype_pars'].hpv18['dur_dysp']['par2'] = 1
         calib_pars['genotype_pars'].hpv16['dur_dysp']['par2'] = 6
-        calib_pars['genotype_pars'].hrhpv['dur_dysp']['par2'] = 10
+        calib_pars['genotype_pars'].hrhpv['dur_dysp']['par2'] = 8
         calib_pars['genotype_pars'].hpv16['dur_dysp']['par1'] = 13
-        calib_pars['genotype_pars'].hrhpv['dur_dysp']['par1'] = 20
-        # calib_pars['genotype_pars'].hpv18['rel_beta'] = 1.25
-        # calib_pars['genotype_pars'].hpv18['cancer_prob'] = 0.13
+        calib_pars['genotype_pars'].hrhpv['dur_dysp']['par1'] = 18
+        calib_pars['genotype_pars'].hpv18['rel_beta'] = 1.25
+        calib_pars['genotype_pars'].hpv18['cancer_prob'] = 0.13
         calib_pars['genotype_pars'].hpv18['prog_rate'] = 0.9
+        calib_pars['genotype_pars'].hrhpv['prog_rate'] = 0.08
         sim.update_pars(calib_pars)
 
     sim.run()
 
-    dt_res = sim.get_analyzer(age_causal_infection_by_genotype)
-    dfs = sc.autolist()
-    var_name_dict = {
-        'age_causal': 'Causal HPV infection',
-        'age_cancer': 'Cancer acquisition'
-    }
-    for gtype in genotypes:
-        gt_dfs = sc.autolist()
-        for val, call in zip(['age_causal', 'age_cancer'], [dt_res.age_causal, dt_res.age_cancer]):
-            dwelltime_df = pd.DataFrame()
-            dwelltime_df['age'] = call[gtype]
-            dwelltime_df['var'] = var_name_dict[val]
-            dwelltime_df['genotype'] = gtype
-            gt_dfs += dwelltime_df
-        gt_df = pd.concat(gt_dfs)
-        dfs += gt_df
-    dt_df = pd.concat(dfs)
+    # Get parameters
+    genotype_pars = sim['genotype_pars']
 
-    dfs = sc.autolist()
-    for gtype in genotypes:
-        gt_dfs = sc.autolist()
-        for val, call in zip(['cin1', 'cin2', 'cin3', 'total'], [dt_res.dwelltime[gtype]['cin1'], dt_res.dwelltime[gtype]['cin2'],
-                                                                dt_res.dwelltime[gtype]['cin3'], dt_res.dwelltime[gtype]['total']]):
-            dwelltime_df = pd.DataFrame()
-            dwelltime_df['years'] = call
-            dwelltime_df['var'] = val
-            dwelltime_df['genotype'] = gtype
-            gt_dfs += dwelltime_df
-        gt_df = pd.concat(gt_dfs)
-        dfs += gt_df
-    dt_df2 = pd.concat(dfs)
 
     ut.set_font(size=20)
-    f, axes = pl.subplots(1, 2, figsize=(16, 10))
-    ax = axes[0]
-    sns.violinplot(data=dt_df, x='var', y='age', hue='genotype', ax=ax)
-    ax.set_xlabel("")
-    ax.set_ylabel("Age")
-    ax.set_xticklabels(['Causal HPV\ninfection', 'Cancer\nacquisition'])
-    sc.SIticks(ax)
+    # set palette
+    colors = sc.gridcolors(10)
+    n_samples = 10
+    cmap = pl.cm.Oranges([0.25, 0.5, 0.75, 1])
 
-    ax=axes[1]
-    sns.violinplot(data=dt_df2, x='var', y='years', hue='genotype', ax=ax)
-    ax.set_xlabel("Dwelltime in health state prior to cancer")
-    ax.set_ylabel("Years")
-    ax.set_xticklabels(['CIN1', 'CIN2', 'CIN3', 'TOTAL'])
-    sc.SIticks(ax)
-    f.tight_layout()
-    pl.savefig(f"{ut.figfolder}/fig5.png", dpi=100)
+    fig, ax = pl.subplots(4, 2, figsize=(16, 18))
+    pn = 0
+    x = np.linspace(0.01, 2, 200)
+
+    for gi, gtype in enumerate(genotypes):
+        sigma, scale = ut.lognorm_params(genotype_pars[gtype]['dur_precin']['par1'],
+                                         genotype_pars[gtype]['dur_precin']['par2'])
+        rv = lognorm(sigma, 0, scale)
+        ax[0, 0].plot(x, rv.pdf(x), color=colors[gi], lw=2, label=gtype.upper())
+        ax[1, 0].plot(x, ut.logf1(x, genotype_pars[gtype]['dysp_rate']), color=colors[gi], lw=2, label=gtype.upper())
+        pn += 1
+
+        ax[1, 0].set_xlabel("Duration of infection prior to\ncontrol/clearance/dysplasia (months)")
+        for row in [0, 1]:
+            ax[row, 0].set_ylabel("")
+            ax[row, 0].grid()
+            ax[row, 0].set_xticks(np.arange(3))
+            ax[row, 0].set_xticklabels([0, 12, 24])
+    ax[0, 0].set_ylabel("Frequency")
+    ax[1, 0].set_ylabel("Probability of developing\ndysplasia")
+    ax[0, 0].set_xlabel("Duration of infection prior to\ncontrol/clearance/dysplasia (months)")
+
+    pn = 0
+    thisx = np.linspace(0.01, 25, 100)
+
+    # Durations and severity of dysplasia
+    for gi, gtype in enumerate(genotypes):
+        ai=1
+        sigma, scale = ut.lognorm_params(genotype_pars[gtype]['dur_dysp']['par1'],
+                                         genotype_pars[gtype]['dur_dysp']['par2'])
+        rv = lognorm(sigma, 0, scale)
+        ax[0, ai].plot(thisx, rv.pdf(thisx), color=colors[gi], lw=2, label=gtype.upper())
+        ax[1, ai].plot(thisx, ut.logf1(thisx, genotype_pars[gtype]['prog_rate']), color=colors[gi], lw=2,
+                       label=gtype.upper())
+        for year in range(1, 26):
+            peaks = ut.logf1(year, hpu.sample(dist='normal', par1=genotype_pars[gtype]['prog_rate'],
+                                              par2=genotype_pars[gtype]['prog_rate_sd'], size=n_samples))
+            ax[1, ai].plot([year] * n_samples, peaks, color=colors[gi], lw=0, marker='o', alpha=0.5)
+        pn += 1
+
+        ax[0, ai].set_ylabel("")
+        ax[0, ai].legend(fontsize=18)
+        ax[0, ai].grid()
+        ax[0, ai].set_ylabel("Frequency")
+        ax[0, ai].set_xlabel("Duration of dysplasia prior to\nregression/cancer (years)")
+
+        # Severity
+        ax[1, ai].set_xlabel("Duration of dysplasia prior to\nregression/cancer (years)")
+        ax[1, ai].set_ylabel("Clinical severity")
+        ax[1, ai].set_ylim([0, 1])
+        ax[1, ai].axhline(y=0.33, ls=':', c='k')
+        ax[1, ai].axhline(y=0.67, ls=':', c='k')
+        ax[1, ai].axhspan(0, 0.33, color=cmap[0], alpha=.4)
+        ax[1, ai].axhspan(0.33, 0.67, color=cmap[1], alpha=.4)
+        ax[1, ai].axhspan(0.67, 1, color=cmap[2], alpha=.4)
+        ax[1, ai].text(-0.3, 0.08, 'CIN1', rotation=90)
+        ax[1, ai].text(-0.3, 0.4, 'CIN2', rotation=90)
+        ax[1, ai].text(-0.3, 0.73, 'CIN3', rotation=90)
+
+    az_res = sim.get_analyzer(hpv.age_results)
+    data_cancers = pd.read_csv('nigeria_cancer_cases.csv')
+    data_types = pd.read_csv('nigeria_cancer_types.csv')
+    for gi, gtype in enumerate(genotypes):
+        ax[2,0].plot(az_res.results['cancers_by_genotype']['bins'],
+                az_res.results['cancers_by_genotype']['2020.0'][:,gi], color=colors[gi], label=gtype)
+    ax[3,0].plot(az_res.results['cancers']['bins'], az_res.results['cancers']['2020.0'], label='model')
+    ax[2,0].set_title('Cancers by genotype/age')
+    ax[3,0].set_title('Cancers by age')
+    data_cancers.plot(x='age', y='value', label='data', ax=ax[3,0])
+    ax[3,0].set_xlabel('')
+    ax[3,0].legend()
+    ax[2,1].plot(sim.res_yearvec[10:], sim.results['cancer_incidence'].values[10:], color=colors[8], label='Crude cancer incidence')
+    ax[2,1].plot(sim.res_yearvec[10:], sim.results['asr_cancer_incidence'].values[10:], color=colors[9], label='Age-standardized cancer incidence')
+    ax[2,1].legend()
+    ax[3,1].scatter(genotypes, sim.results['cancerous_genotype_dist'][:,-1], label='model')
+    ax[3,1].scatter(genotypes, data_types['value'], label='data')
+    ax[3,1].legend()
+    ax[3,1].set_title('HPV type distribution in cancer')
+    sc.SIticks(ax[2,0])
+    sc.SIticks(ax[3,0])
+    sc.SIticks(ax[2,1])
+    sc.SIticks(ax[3,1])
+    fig.tight_layout()
+    pl.savefig(f"{ut.figfolder}/calib_tool.png", dpi=100)
+    fig.show()
 
 
 
@@ -219,6 +266,6 @@ if __name__ == '__main__':
     file = f'nigeria_pars.obj'
     calib_pars = sc.loadobj(file)
 
-    plot_fig5(calib_pars=calib_pars)
+    run_calib_tool(calib_pars=calib_pars)
 
     print('Done.')

@@ -5,7 +5,7 @@ import hpvsim as hpv
 import hpvsim.utils as hpu
 import pylab as pl
 import pandas as pd
-from scipy.stats import lognorm
+from scipy.stats import lognorm, norm
 import numpy as np
 import sciris as sc
 import utils as ut
@@ -32,13 +32,14 @@ def plot_fig4(calib_pars=None):
     sim.initialize()
     # Create sim to get baseline prognoses parameters
     if calib_pars is not None:
-        # calib_pars['genotype_pars'].hpv16['dur_dysp']['par1'] = 15
-        # calib_pars['genotype_pars'].hpv16['prog_rate'] = 0.078
-        # calib_pars['genotype_pars'].hpv16['prog_rate_sd'] = 0.015
-        # calib_pars['genotype_pars'].hrhpv['prog_rate_sd'] = 0.015
+        calib_pars['genotype_pars'].hpv18['dur_dysp']['par2'] = 1.5
+        calib_pars['genotype_pars'].hpv16['dur_dysp']['par2'] = 6
+        calib_pars['genotype_pars'].hrhpv['dur_dysp']['par2'] = 10
+        # calib_pars['genotype_pars'].hpv18['cancer_prob'] = 0.14
+        # calib_pars['genotype_pars'].hpv18['prog_rate'] = 0.9
         sim.update_pars(calib_pars)
 
-    sim.run()
+    # sim.run()
 
     # Get parameters
     ng = sim['n_genotypes']
@@ -160,28 +161,30 @@ def plot_fig4(calib_pars=None):
         cin3shares.append(((rv.cdf(longx[indcin3]) - rv.cdf(longx[indcin2])) * shares[g]))
         cancershares.append((num_cancers/len(dd)) * shares[g])
 
-    dt_res = sim.get_analyzer(hpv.dwelltime)
-    dfs = sc.autolist()
-    for gtype in genotypes:
-        gt_dfs = sc.autolist()
-        for val, call in zip(['hpv', 'cin1', 'cin2', 'cin3'], [dt_res.dwelltime[gtype]['hpv'], dt_res.dwelltime[gtype]['cin1'],
-                                                                dt_res.dwelltime[gtype]['cin2'], dt_res.dwelltime[gtype]['cin3']]):
-            dwelltime_df = pd.DataFrame()
-            dwelltime_df['years'] = call
-            dwelltime_df['var'] = val
-            dwelltime_df['genotype'] = gtype
-            gt_dfs += dwelltime_df
-        gt_df = pd.concat(gt_dfs)
-        dfs += gt_df
-    dt_df = pd.concat(dfs)
+    # dt_res = sim.get_analyzer(hpv.dwelltime)
+    # dfs = sc.autolist()
+    # for gtype in genotypes:
+    #     gt_dfs = sc.autolist()
+    #     for val, call in zip(['hpv', 'cin1', 'cin2', 'cin3'], [dt_res.dwelltime[gtype]['hpv'], dt_res.dwelltime[gtype]['cin1'],
+    #                                                             dt_res.dwelltime[gtype]['cin2'], dt_res.dwelltime[gtype]['cin3']]):
+    #         dwelltime_df = pd.DataFrame()
+    #         dwelltime_df['years'] = call
+    #         dwelltime_df['var'] = val
+    #         dwelltime_df['genotype'] = gtype
+    #         gt_dfs += dwelltime_df
+    #     gt_df = pd.concat(gt_dfs)
+    #     dfs += gt_df
+    # dt_df = pd.concat(dfs)
+    #
+    # ai=2
+    #
+    # sns.violinplot(data=dt_df, x='var', y='years', hue='genotype', ax=ax[0,ai])
+    # ax[0,ai].set_xlabel("Dwelltime in health state")
+    # ax[0,ai].set_ylabel("Years")
+    # ax[0,ai].set_xticklabels(['HPV', 'CIN1', 'CIN2', 'CIN3'])
+    # sc.SIticks(ax[0,ai])
 
     ai=2
-
-    sns.violinplot(data=dt_df, x='var', y='years', hue='genotype', ax=ax[0,ai])
-    ax[0,ai].set_xlabel("Dwelltime in health state")
-    ax[0,ai].set_ylabel("Years")
-    ax[0,ai].set_xticklabels(['HPV', 'CIN1', 'CIN2', 'CIN3'])
-    sc.SIticks(ax[0,ai])
 
     bottom = np.zeros(ng + 1)
     all_shares = [noneshares + [sum([j * 1 / ng for j in noneshares])],
