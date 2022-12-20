@@ -166,7 +166,7 @@ def plot_fig4(calib_pars=None):
         cin1shares.append(((rv.cdf(longx[indcin1]) - rv.cdf(longx[0])) * shares[g]))
         cin2shares.append(((rv.cdf(longx[indcin2]) - rv.cdf(longx[indcin1])) * shares[g]))
         cin3shares.append(((rv.cdf(longx[indcin3]) - rv.cdf(longx[indcin2])) * shares[g]))
-        cancershares.append((n_cin3/len(dd)) * shares[g])
+        cancershares.append((n_cancer/len(dd)) * shares[g])
 
     ai=2
 
