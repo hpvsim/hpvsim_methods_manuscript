@@ -149,10 +149,10 @@ def plot_fig5(calib_pars=None):
     # Create sim to get baseline prognoses parameters
     if calib_pars is not None:
         ## hpv 16 pars
-        calib_pars['genotype_pars'].hpv16['dur_dysp']['par2'] = 3.8  # 4
-        calib_pars['genotype_pars'].hpv16['dur_dysp']['par1'] = 7.25  # 13
-        calib_pars['genotype_pars'].hpv16['prog_rate'] = 0.17  # 0.099
-        calib_pars['genotype_pars'].hpv16['cancer_prob'] = 0.022  # 0.017
+        calib_pars['genotype_pars'].hpv16['dur_dysp']['par2'] = 3.8 #4
+        calib_pars['genotype_pars'].hpv16['dur_dysp']['par1'] = 7.25 #13
+        calib_pars['genotype_pars'].hpv16['prog_rate'] = 0.18 #0.099
+        calib_pars['genotype_pars'].hpv16['cancer_prob'] = 0.022 # 0.017
 
         ## hpv 18 pars
         calib_pars['genotype_pars'].hpv18['dur_dysp']['par2'] = 0.75
@@ -161,9 +161,9 @@ def plot_fig5(calib_pars=None):
         # calib_pars['genotype_pars'].hpv18['prog_rate'] = 0.9
 
         ## hr hpv pars
-        calib_pars['genotype_pars'].hrhpv['dur_dysp']['par2'] = 8
+        calib_pars['genotype_pars'].hrhpv['dur_dysp']['par2'] = 18
         # calib_pars['genotype_pars'].hrhpv['dur_dysp']['par1'] = 18
-        calib_pars['genotype_pars'].hrhpv['rel_beta'] = 0.75
+        calib_pars['genotype_pars'].hrhpv['rel_beta'] = 0.76
         calib_pars['genotype_pars'].hrhpv['cancer_prob'] = 0.0026
         # calib_pars['genotype_pars'].hrhpv['prog_rate'] = 0.08
 
