@@ -121,52 +121,68 @@ def plot_fig4(calib_pars=None):
         ax[1, ai].text(-0.3, 0.73, 'CIN3', rotation=90)
 
 
-    shares = []
-    gtypes = []
-    noneshares, cin1shares, cin2shares, cin3shares, cancershares = [], [], [], [], []
-    longx = np.linspace(0.01, 25, 1000)
+    # This section calculates the overall share of outcomes for people infected with each genotype
+    dysp_shares = [] # Initialize the share of people who develop ANY dysplasia
+    gtypes = []      # Initialize genotypes -- TODO, is this necessary?
+    noneshares, cin1shares, cin2shares, cin3shares, cancershares = [], [], [], [], [] # Initialize share by each outcome
+    igi = 0.01 # Define the integration interval
+    longx = sc.inclusiverange(0.01,25,igi) # Initialize an array of years 0-25
+
+    # Loop over genotypes
     for g in range(ng):
-        sigma, scale = ut.lognorm_params(dur_precin[g]['par1'], dur_precin[g]['par2'])
-        rv = lognorm(sigma, 0, scale)
-        aa = np.diff(rv.cdf(longx))
-        bb = ut.logf1(longx, dysp_rate[g])[1:]
-        shares.append(np.dot(aa, bb))
-        gtypes.append(genotype_map[g].replace('hpv', ''))
+
+        # Firstly, determine shares of women who develop any dysplasia
+        sigma, scale = ut.lognorm_params(dur_precin[g]['par1'], dur_precin[g]['par2']) # Calculate parameters in the format expected by scipy
+        rv = lognorm(sigma, 0, scale) # Create scipy rv object
+        aa = np.diff(rv.cdf(longx))  # Calculate the probability that a woman will have a pre-dysplasia duration in any of the subintervals of time spanning 0-25 years
+        bb = ut.logf1(longx, dysp_rate[g])[1:] # Calculate the probablity of her developing dysplasia for a given duration
+        dysp_shares.append(np.dot(aa, bb)) # Convolve the two above calculations to determine the probability of her developing dysplasia overall
+        gtypes.append(genotype_map[g].replace('hpv', '')) # Store genotype names for labeling
 
     for g in range(ng):
-        sigma, scale = ut.lognorm_params(dur_dysp[g]['par1'], dur_dysp[g]['par2'])
-        rv = lognorm(sigma, 0, scale)
-        dd = ut.logf1(longx, prog_rate[g])
-        indcin1 = sc.findinds(dd < .33)[-1]
-        n_cin1 = indcin1
-        if (dd > .33).any():
-            indcin2 = sc.findinds((dd > .33) & (dd < .67))[-1]
-            n_cin2 = indcin2 - indcin1
+        # Next, determine the outcomes for women who do develop dysplasia
+        sigma, scale = ut.lognorm_params(dur_dysp[g]['par1'], dur_dysp[g]['par2']) # Calculate parameters in the format expected by scipy
+        rv = lognorm(sigma, 0, scale) # Create scipy rv object
+        peak_dysp = ut.logf1(longx, prog_rate[g]) # Calculate peak dysplasia
+
+        # Find women who only advance to CIN1
+        indcin1 = sc.findinds(peak_dysp < .33)[-1]
+        cin1_share = rv.cdf(longx[indcin1]) - rv.cdf(longx[0])
+
+        # See if there are women who advance to CIN2 and get their indices if so
+        if (peak_dysp > .33).any():
+            indcin2 = sc.findinds((peak_dysp > .33) & (peak_dysp < .67))[-1]
         else:
             indcin2 = indcin1
-            n_cin2 = 0
-        if (dd > .67).any():
-            cin3_inds = sc.findinds((dd>0.67))
-            cin3_dur_dysp_times = longx[cin3_inds]
-            cin3_times = cin3_dur_dysp_times - sc.randround(hpu.invlogf1(0.67, prog_rate[g]))
-            cin3_times[cin3_times < 0] = 0
-            cancer_probs = 1 - (1 - cancer_prob[g]) ** cin3_times
-            n_cancer = len(hpu.true(hpu.n_binomial(cancer_probs, len(cin3_inds))))
-            n_cin3 = len(cin3_inds) - n_cancer
-            if n_cancer:
-                indcin3 = sc.findinds((dd > .67) )[-n_cin3]
-            else:
-                indcin3 = sc.findinds((dd > .67) )[-1]
+        cin2_share = rv.cdf(longx[indcin2]) - rv.cdf(longx[indcin1])
+
+        # See if there are women who advance to CIN3, and get their indices if so
+        cancer_share_of_cin3s = 0 # Initially assume no cancers, update later
+        if (peak_dysp > .67).any():
+            cin3_cancer_inds = sc.findinds((peak_dysp>0.67)) # This give the combined indices of those whose worst outcome is CIN3 and those whose worst outcome is cancer. We now need to separate these
+            indcin3 = cin3_cancer_inds[-1] # Index after which people develop CIN3 (plus possibly cancer)
+
+            # Calculate the share of these women who develop cancer
+            years_with_dysp = longx[cin3_cancer_inds] # Figure out the total duration of dysplasia for women who develop CIN3
+            years_with_cin3 = years_with_dysp - hpu.invlogf1(0.67, prog_rate[g]) # Figure out how many years they have CIN3 for (i.e., total dysp time minus time they developed CIN3, note this is not dt-dependent)
+            cancer_probs = 1 - (1 - cancer_prob[g]) ** years_with_cin3 # Apply the annual probability of them developing cancer to each of the years they have CIN3
+            cancer_inds = hpu.true(hpu.n_binomial(cancer_probs, len(cin3_cancer_inds))) # Use binomial probabilities to determine the indices of those who get cancer
+            n_cin3_cancer = len(cin3_cancer_inds) # Number who get CIN3 + number who get cancer
+            n_cancer = len(cancer_inds) # Number who get cancer
+            cancer_share_of_cin3s = n_cancer/n_cin3_cancer # Share of CIN3/cancer women who get cancer
 
         else:
             indcin3 = indcin2
-            n_cin3 = 0
 
-        noneshares.append(1 - shares[g])
-        cin1shares.append(((rv.cdf(longx[indcin1]) - rv.cdf(longx[0])) * shares[g]))
-        cin2shares.append(((rv.cdf(longx[indcin2]) - rv.cdf(longx[indcin1])) * shares[g]))
-        cin3shares.append(((rv.cdf(longx[indcin3]) - rv.cdf(longx[indcin2])) * shares[g]))
-        cancershares.append((n_cancer/len(dd)) * shares[g])
+        cin3_cancer_share = rv.cdf(longx[indcin3]) - rv.cdf(longx[indcin2]) # Share who develop CIN3 as worst outcome + share who develop cancer as worst outcome
+        cin3_share = cin3_cancer_share*(1-cancer_share_of_cin3s)
+        cancer_share = cin3_cancer_share*cancer_share_of_cin3s
+
+        noneshares.append(1 - dysp_shares[g])
+        cin1shares.append(cin1_share * dysp_shares[g])
+        cin2shares.append(cin2_share * dysp_shares[g])
+        cin3shares.append(cin3_share * dysp_shares[g])
+        cancershares.append(cancer_share * dysp_shares[g])
 
     ai=2
 
@@ -179,10 +195,15 @@ def plot_fig4(calib_pars=None):
                   ]
     for gn, grade in enumerate(['No dysplasia', 'CIN1', 'CIN2', 'CIN3', 'Cancer']):
         ydata = np.array(all_shares[gn])
-        if len(ydata.shape) > 1: ydata = ydata[:, 0]
-        color = cmap[gn - 1] if gn > 0 else 'gray'
+        #if len(ydata.shape) > 1: ydata = ydata[:, 0]
+        color = cmap[gn-1,:] if gn > 0 else 'gray'
+        print(grade)
+        print(color)
+        print(bottom)
+        print(ydata)
         ax[1,ai].bar(np.arange(1, ng + 1), ydata, color=color, bottom=bottom, label=grade)
         bottom = bottom + ydata
+
     ax[1,ai].set_xticks(np.arange(1,ng + 1))
     ax[1,ai].set_xticklabels(gtypes)
     ax[1,ai].set_ylabel("")
