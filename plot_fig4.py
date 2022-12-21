@@ -44,11 +44,7 @@ def plot_fig4(calib_pars=None):
     # Get parameters
     ng = sim['n_genotypes']
     genotype_map = sim['genotype_map']
-
-    if calib_pars is not None:
-        genotype_pars = calib_pars['genotype_pars']
-    else:
-        genotype_pars = sim['genotype_pars']
+    genotype_pars = sim['genotype_pars']
 
     # Shorten duration names
     dur_precin = [genotype_pars[genotype_map[g]]['dur_precin'] for g in range(ng)]
@@ -65,7 +61,7 @@ def plot_fig4(calib_pars=None):
 
     fig, ax = pl.subplots(2, 3, figsize=(16, 10))
     pn = 0
-    x = np.linspace(0.01, 2, 200)
+    x = np.linspace(0.01, 3, 200)
 
     for gi, gtype in enumerate(genotypes):
         sigma, scale = ut.lognorm_params(genotype_pars[gtype]['dur_precin']['par1'],
@@ -79,8 +75,8 @@ def plot_fig4(calib_pars=None):
         for row in [0, 1]:
             ax[row, 0].set_ylabel("")
             ax[row, 0].grid()
-            ax[row, 0].set_xticks(np.arange(3))
-            ax[row, 0].set_xticklabels([0, 12, 24])
+            ax[row, 0].set_xticks(np.arange(4))
+            ax[row, 0].set_xticklabels([0, 12, 24, 36])
     ax[0, 0].set_ylabel("Frequency")
     ax[1, 0].set_ylabel("Probability of developing\ndysplasia")
     ax[0, 0].set_xlabel("Duration of infection prior to\ncontrol/clearance/dysplasia (months)")
@@ -128,7 +124,7 @@ def plot_fig4(calib_pars=None):
     gtypes = []      # Initialize genotypes -- TODO, is this necessary?
     noneshares, cin1shares, cin2shares, cin3shares, cancershares = [], [], [], [], [] # Initialize share by each outcome
     igi = 0.01 # Define the integration interval
-    longx = sc.inclusiverange(0.01,50,igi) # Initialize a LONG array of years
+    longx = sc.inclusiverange(0.01,80,igi) # Initialize a LONG array of years
 
     # Loop over genotypes
     for g in range(ng):
@@ -206,7 +202,7 @@ def plot_fig4(calib_pars=None):
     ax[1,ai].set_xticks(np.arange(1,ng + 1))
     ax[1,ai].set_xticklabels(gtypes)
     ax[1,ai].set_ylabel("")
-    ax[1,ai].legend()
+    ax[1,ai].legend(bbox_to_anchor=(1.05,1))
 
 
     pl.figtext(0.06, 0.94, 'A', fontweight='bold', fontsize=30)

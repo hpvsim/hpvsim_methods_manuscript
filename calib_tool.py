@@ -185,7 +185,7 @@ def run_calib_tool(calib_pars=None):
 
     fig, ax = pl.subplots(4, 2, figsize=(16, 18))
     pn = 0
-    x = np.linspace(0.01, 2, 200)
+    x = np.linspace(0.01, 3, 200)
 
     for gi, gtype in enumerate(genotypes):
         sigma, scale = ut.lognorm_params(genotype_pars[gtype]['dur_precin']['par1'],
@@ -199,8 +199,8 @@ def run_calib_tool(calib_pars=None):
         for row in [0, 1]:
             ax[row, 0].set_ylabel("")
             ax[row, 0].grid()
-            ax[row, 0].set_xticks(np.arange(3))
-            ax[row, 0].set_xticklabels([0, 12, 24])
+            ax[row, 0].set_xticks(np.arange(4))
+            ax[row, 0].set_xticklabels([0, 12, 24, 36])
     ax[0, 0].set_ylabel("Frequency")
     ax[1, 0].set_ylabel("Probability of developing\ndysplasia")
     ax[0, 0].set_xlabel("Duration of infection prior to\ncontrol/clearance/dysplasia (months)")
