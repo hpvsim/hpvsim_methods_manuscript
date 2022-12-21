@@ -126,7 +126,7 @@ def plot_fig4(calib_pars=None):
     gtypes = []      # Initialize genotypes -- TODO, is this necessary?
     noneshares, cin1shares, cin2shares, cin3shares, cancershares = [], [], [], [], [] # Initialize share by each outcome
     igi = 0.01 # Define the integration interval
-    longx = sc.inclusiverange(0.01,25,igi) # Initialize an array of years 0-25
+    longx = sc.inclusiverange(0.01,50,igi) # Initialize a LONG array of years
 
     # Loop over genotypes
     for g in range(ng):
@@ -193,14 +193,11 @@ def plot_fig4(calib_pars=None):
                   cin3shares,
                   cancershares,
                   ]
+
     for gn, grade in enumerate(['No dysplasia', 'CIN1', 'CIN2', 'CIN3', 'Cancer']):
         ydata = np.array(all_shares[gn])
         #if len(ydata.shape) > 1: ydata = ydata[:, 0]
         color = cmap[gn-1,:] if gn > 0 else 'gray'
-        print(grade)
-        print(color)
-        print(bottom)
-        print(ydata)
         ax[1,ai].bar(np.arange(1, ng + 1), ydata, color=color, bottom=bottom, label=grade)
         bottom = bottom + ydata
 
@@ -226,6 +223,6 @@ if __name__ == '__main__':
     file = f'nigeria_pars.obj'
     calib_pars = sc.loadobj(file)
 
-    plot_fig4()
+    plot_fig4(calib_pars)
 
     print('Done.')
