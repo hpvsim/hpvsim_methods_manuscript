@@ -1,5 +1,9 @@
 """
 This script runs Use Case 1 from the HPVsim methods manuscript.
+
+*Motivation*
+Here we investigate the potential impact of changing from a screen-and-treat algorithm
+to a screen-triage-treat algorithm
 """
 
 import hpvsim as hpv
