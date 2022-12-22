@@ -40,10 +40,10 @@ resfolder = 'results'
 figfolder = 'figures'
 to_run = [
     # 'run_sim',
-    # 'run_sims',
+    'run_sims',
     # 'plot_mixing',
     # 'plot_sims',
-    'run_scenarios',
+    # 'run_scenarios',
     # 'plot_scenarios',
 ]
 
@@ -466,35 +466,34 @@ if __name__ == '__main__':
         start_year = 2000
         intv_year = 2025
 
-        for skey,sname in settings.items():
-
-            fig, ax = pl.subplots(figsize=(16, 8))
-
-            for vn, vkey, vname in vx_scens.enumitems():
-                df = bigdf[(bigdf.setting == skey) & (bigdf.vx_scen == vkey)]
-                si = sc.findinds(np.array(df.year), start_year)[0]
-                ii = sc.findinds(np.array(df.year), intv_year)[0]
-                years = np.array(df.year)[si:]
-                best = np.array(df['cancers'])[si:]
-                low = np.array(df['cancers_low'])[si:]
-                high = np.array(df['cancers_high'])[si:]
-                ax.plot(years, best, color=colors[vn], label=vname)
-                ax.fill_between(years, low, high, color=colors[vn], alpha=0.3)
-            ax.legend(loc='upper left')
-            sc.SIticks(ax)
-            sc.setylim([0,350])
-            fig.tight_layout()
-            fig_name = f'{figfolder}/{skey}.png'
-            sc.savefig(fig_name, dpi=100)
+        # for skey,sname in settings.items():
+        #
+        #     fig, ax = pl.subplots(figsize=(16, 8))
+        #
+        #     for vn, vkey, vname in vx_scens.enumitems():
+        #         df = bigdf[(bigdf.setting == skey) & (bigdf.vx_scen == vkey)]
+        #         si = sc.findinds(np.array(df.year), start_year)[0]
+        #         ii = sc.findinds(np.array(df.year), intv_year)[0]
+        #         years = np.array(df.year)[si:]
+        #         best = np.array(df['cancers'])[si:]
+        #         low = np.array(df['cancers_low'])[si:]
+        #         high = np.array(df['cancers_high'])[si:]
+        #         ax.plot(years, best, color=colors[vn], label=vname)
+        #         ax.fill_between(years, low, high, color=colors[vn], alpha=0.3)
+        #     ax.legend(loc='upper left')
+        #     sc.SIticks(ax)
+        #     sc.setylim([0,350])
+        #     fig.tight_layout()
+        #     fig_name = f'{figfolder}/{skey}.png'
+        #     sc.savefig(fig_name, dpi=100)
 
         # Bar plots of cancers averted
         cancers_averted = sc.loadobj(f'{resfolder}/cancers_averted_uc2.obj')
         exposure = sc.loadobj(f'{resfolder}/exposure_uc2.obj')
-        fig, axes = pl.subplots(1, 3, figsize=(16, 8))
+        fig, axes = pl.subplots(1, 2, figsize=(16, 8))
         quantiles = np.array([0.1,0.5,0.9])
         axtitles = [
             'Proportion exposed by age, 2015',
-            'Cancers averted by\nroutine vaccination\n (%, 2025-2060)',
             'Cancers averted by\ncatch-up campaign\n (%, 2025-2060)',
         ]
 
@@ -503,7 +502,7 @@ if __name__ == '__main__':
         ax = axes[0]
         ages = np.arange(10, 25)
         for sn, skey, sname in settings.enumitems():
-            ddf = exposure[(exposure.setting == skey) & (exposure.year == 2015) & (exposure.vx_scen == 'no_vx')]
+            ddf = exposure[(exposure.setting == skey) & (exposure.year == 2015) & (exposure.vx_scen == 'routine')]
             best = np.array(ddf.best)[0] # TEMP indexing fix
             low = np.array(ddf.low)[0] # TEMP indexing fix
             high = np.array(ddf.high)[0] # TEMP indexing fix
@@ -513,12 +512,12 @@ if __name__ == '__main__':
         ax.set_title(axtitles[0])
 
         # Cancers averted
-        for vn,vx_scen in enumerate(['routine', 'campaign']):
+        for vn,vx_scen in enumerate(['campaign']):
             ax = axes[vn+1]
             x = np.arange(len(settings))
             y,ymin,ymax = sc.autolist(), sc.autolist(), sc.autolist()
             for sn,skey,sname in settings.enumitems():
-                res = cancers_averted[vx_scen][skey]
+                res = cancers_averted[skey]
                 lo,med,hi = np.quantile(res,quantiles)
                 y += med
                 ymin += med-lo
@@ -529,7 +528,7 @@ if __name__ == '__main__':
             ax.set_title(axtitles[vn+1])
             sc.SIticks(ax)
             fig.tight_layout()
-            fig_name = f'{figfolder}/ccaverted_uc2.png'
+            fig_name = f'{figfolder}/uc2_plot.png'
             sc.savefig(fig_name, dpi=100)
 
     print('Done.')

@@ -38,6 +38,7 @@ def make_sim(seed=0):
         dt              = [0.5,1.0][debug],
         start           = [1975,2000][debug],
         end             = 2060,
+        ms_agent_ratio  = 10,
         burnin          = [45,0][debug],
         rand_seed       = seed,
     )
@@ -142,7 +143,7 @@ def run_scens(sim=None, seed=0, n_seeds=3, meta=None, verbose=0, debug=debug):
     scenarios = {
         'baseline': {'name': 'No screening','pars': {}},
         'algo2':    {'name': 'Algorithm 2', 'pars': {'interventions': algo2}},
-        'algo2':    {'name': 'Algorithm 3', 'pars': {'interventions': algo3}},
+        'algo3':    {'name': 'Algorithm 3', 'pars': {'interventions': algo3}},
     }
     scens = hpv.Scenarios(sim=sim, metapars={'n_runs': 3}, scenarios=scenarios)
     scens.run()
