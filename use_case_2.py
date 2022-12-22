@@ -43,8 +43,8 @@ to_run = [
     # 'run_sims',
     # 'plot_mixing',
     # 'plot_sims',
-    # 'run_scenarios',
-    'plot_scenarios',
+    'run_scenarios',
+    # 'plot_scenarios',
 ]
 
 #%% Define parameters
@@ -181,7 +181,6 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
         condoms         = dict(m=0, c=0, o=0),
         debut           = debut[setting],
         mixing          = mixing[setting],
-        use_multiscale  = False,
         ms_agent_ratio  = 1,
         location        = 'kenya',
         rand_seed       = seed,
@@ -317,23 +316,17 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug, e
 
     # Calculate cancers averted for each seed
     cancers_averted = sc.objdict()
-    cancers_averted.routine = sc.objdict()
-    cancers_averted.campaign = sc.objdict()
     intv_year = 2025
     si = sc.findinds(sim.res_yearvec, intv_year)[0]
     for i_se, setting in enumerate(settings):
-        cancers_averted.routine[setting] = sc.autolist()
-        cancers_averted.campaign[setting] = sc.autolist()
+        cancers_averted[setting] = sc.autolist()
 
         for i_s in range(n_seeds):
-            baseline    = sims[i_se, 0, i_s].results['cancers'][si:].sum()
-            routine     = sims[i_se, 1, i_s].results['cancers'][si:].sum()
-            campaign    = sims[i_se, 2, i_s].results['cancers'][si:].sum()
-            cancers_averted.routine[setting] += (baseline - routine)/baseline
-            cancers_averted.campaign[setting] += (routine - campaign)/routine
-        cancers_averted.routine[setting] = np.array(cancers_averted.routine[setting])
-        cancers_averted.campaign[setting] = np.array(cancers_averted.campaign[setting])
-    sc.saveobj(f'{resfolder}/cancers_averted_uc1.obj', cancers_averted)
+            routine    = sims[i_se, 0, i_s].results['cancers'][si:].sum()
+            campaign    = sims[i_se, 1, i_s].results['cancers'][si:].sum()
+            cancers_averted[setting] += (routine - campaign)/routine
+        cancers_averted[setting] = np.array(cancers_averted[setting])
+    sc.saveobj(f'{resfolder}/cancers_averted_uc2.obj', cancers_averted)
 
     # Prepare to convert sims to msims
     all_sims_for_multi = []
@@ -378,8 +371,8 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug, e
 
     alldf = pd.concat(dfs)
     all_exp_df = pd.concat(exp_dfs)
-    sc.saveobj(f'{resfolder}/results_uc1.obj', alldf)
-    sc.saveobj(f'{resfolder}/exposure_uc1.obj', all_exp_df)
+    sc.saveobj(f'{resfolder}/results_uc2.obj', alldf)
+    sc.saveobj(f'{resfolder}/exposure_uc2.obj', all_exp_df)
 
     return alldf, msims
 
@@ -398,7 +391,7 @@ if __name__ == '__main__':
 
     # Run scenarios
     if 'run_scenarios' in to_run:
-        vx_scens = [None, 'routine', 'routine_campaign']
+        vx_scens = ['routine', 'routine_campaign']
         n_seeds = [10,1][debug]
         alldf, msims = run_scens(settings=settings, vx_scens=vx_scens, n_seeds=n_seeds, verbose=-1, debug=debug)
 
@@ -468,7 +461,7 @@ if __name__ == '__main__':
 
         settings = sc.objdict({'s1':'AFS=18,\n1y age gap', 's2':'AFS=18,\n10y age gap', 's3':'AFS=16,\n1y age gap'})
         vx_scens = sc.objdict({'no_vx': 'No vaccination', 'routine': 'Routine', 'routine_campaign':'Campaign'})
-        bigdf = sc.loadobj(f'{resfolder}/results_uc1.obj')
+        bigdf = sc.loadobj(f'{resfolder}/results_uc2.obj')
         colors = sc.gridcolors(len(vx_scens))
         start_year = 2000
         intv_year = 2025
@@ -495,8 +488,8 @@ if __name__ == '__main__':
             sc.savefig(fig_name, dpi=100)
 
         # Bar plots of cancers averted
-        cancers_averted = sc.loadobj(f'{resfolder}/cancers_averted_uc1.obj')
-        exposure = sc.loadobj(f'{resfolder}/exposure_uc1.obj')
+        cancers_averted = sc.loadobj(f'{resfolder}/cancers_averted_uc2.obj')
+        exposure = sc.loadobj(f'{resfolder}/exposure_uc2.obj')
         fig, axes = pl.subplots(1, 3, figsize=(16, 8))
         quantiles = np.array([0.1,0.5,0.9])
         axtitles = [
@@ -536,7 +529,7 @@ if __name__ == '__main__':
             ax.set_title(axtitles[vn+1])
             sc.SIticks(ax)
             fig.tight_layout()
-            fig_name = f'{figfolder}/ccaverted_uc1.png'
+            fig_name = f'{figfolder}/ccaverted_uc2.png'
             sc.savefig(fig_name, dpi=100)
 
     print('Done.')
