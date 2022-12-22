@@ -181,6 +181,7 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
         condoms         = dict(m=0, c=0, o=0),
         debut           = debut[setting],
         mixing          = mixing[setting],
+        genotypes       = [16,18],
         ms_agent_ratio  = 1,
         location        = 'kenya',
         rand_seed       = seed,
