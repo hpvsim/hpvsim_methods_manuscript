@@ -40,10 +40,10 @@ resfolder = 'results'
 figfolder = 'figures'
 to_run = [
     # 'run_sim',
-    'run_sims',
+    # 'run_sims',
     # 'plot_mixing',
     # 'plot_sims',
-    # 'run_scenarios',
+    'run_scenarios',
     # 'plot_scenarios',
 ]
 
@@ -212,10 +212,10 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
             campaign_vx = hpv.campaign_vx(
                 prob=.5,
                 sex=0,
-                years=[2025,2026,2027,2028,2029],
+                years=[2025],
                 product='bivalent',
                 eligibility=vax_eligible,
-                age_range=(18, 30),
+                age_range=(16, 24),
                 label='Campaign'
             )
             interventions.append(campaign_vx)

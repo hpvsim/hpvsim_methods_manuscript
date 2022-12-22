@@ -23,8 +23,8 @@ debug = 0
 resfolder = 'results'
 figfolder = 'figures'
 to_run = [
-    'run_scenarios',
-    # 'plot_scenarios',
+    # 'run_scenarios',
+    'plot_scenarios',
 ]
 
 
@@ -166,10 +166,10 @@ if __name__ == '__main__':
 
         to_plot = {
         'Age standardized cancer incidence': ['asr_cancer_incidence'],
-        'Cancer cases': ['cancers'],
-        'Cancer deaths': ['cancer_deaths'],
+        # 'Cancer cases': ['cancers'],
+        # 'Cancer deaths': ['cancer_deaths'],
         'Treatments': ['new_cin_treatments'],
         }
-        scens.plot(to_plot=to_plot, n_cols=2, fig_path=f'{figfolder}/uc1_plot.png', do_save=True)
+        scens.plot(to_plot=to_plot, n_cols=1, fig_path=f'{figfolder}/uc1_plot.png', do_save=True)
 
     print('Done.')
