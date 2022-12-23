@@ -181,7 +181,7 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
         debut           = debut[setting],
         mixing          = mixing[setting],
         ms_agent_ratio  = 1,
-        # location        = 'nigeria',
+        location        = 'kenya',
         rand_seed       = seed,
     )
 
