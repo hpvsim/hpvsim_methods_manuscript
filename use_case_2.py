@@ -178,12 +178,10 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
         start           = [1975,2000][debug],
         end             = 2060,
         burnin          = [25,0][debug],
-        condoms         = dict(m=0, c=0, o=0),
         debut           = debut[setting],
         mixing          = mixing[setting],
-        # genotypes       = [16,18],
         ms_agent_ratio  = 1,
-        location        = 'nigeria',
+        # location        = 'nigeria',
         rand_seed       = seed,
     )
 
@@ -323,7 +321,7 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug, e
         cancers_averted[setting] = sc.autolist()
 
         for i_s in range(n_seeds):
-            routine    = sims[i_se, 0, i_s].results['cancers'][si:].sum()
+            routine     = sims[i_se, 0, i_s].results['cancers'][si:].sum()
             campaign    = sims[i_se, 1, i_s].results['cancers'][si:].sum()
             cancers_averted[setting] += (routine - campaign)/routine
         cancers_averted[setting] = np.array(cancers_averted[setting])
