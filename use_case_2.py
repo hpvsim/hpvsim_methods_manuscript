@@ -44,50 +44,30 @@ to_run = [
     # 'plot_mixing',
     # 'plot_sims',
     'run_scenarios',
-    # 'plot_scenarios',
+    'plot_scenarios',
 ]
 
 #%% Define parameters
 settings = ['s1', 's2', 's3']
+# settings = ['s2', 's3']
 debut = dict()
 mixing = dict()
 
 # Define ASF for all 3 archetypes
 debut['s1'] = dict(
-    f=dict(dist='normal', par1=18., par2=2.),
-    m=dict(dist='normal', par1=19., par2=2.),
+    f=dict(dist='normal', par1=14., par2=2.),
+    m=dict(dist='normal', par1=15., par2=2.),
 )
 debut['s2'] = dict(
-    f=dict(dist='normal', par1=18., par2=2.),
-    m=dict(dist='normal', par1=20., par2=2.),
-)
-debut['s3'] = dict(
     f=dict(dist='normal', par1=16., par2=2.),
     m=dict(dist='normal', par1=17., par2=2.),
 )
+debut['s3'] = dict(
+    f=dict(dist='normal', par1=18., par2=2.),
+    m=dict(dist='normal', par1=19., par2=2.),
+)
 
 # Define SPAD for all 3 archetypes
-mixing['s1'] = {
-    k:np.array([
-        #       0,  5,  10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75
-        [0,     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [5,     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [10,    0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [15,    0,  0,  1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [20,    0,  0,  1, .5,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [25,    0,  0,  0,  0, .5,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [30,    0,  0,  0,  0,  0, .5,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [35,    0,  0,  0,  0,  0,  0, .5,  1,  0,  0,  0,  0,  0,  0,  0,  0],
-        [40,    0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0],
-        [45,    0,  0,  0,  0,  0,  0,  0,  0, .5,  1,  0,  0,  0,  0,  0,  0],
-        [50,    0,  0,  0,  0,  0,  0,  0,  0,  0, .5,  1,  0,  0,  0,  0,  0],
-        [55,    0,  0,  0,  0,  0,  0,  0,  0,  0,  0, .5,  1,  0,  0,  0,  0],
-        [60,    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, .5,  1,  0,  0,  0],
-        [65,    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, .5,  1,  0,  0],
-        [70,    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, .5,  1,  0],
-        [75,    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, .5,  1],
-    ]) for k in ['m','c','o']
-}
 
 mixing['s2'] = {
     k:np.array([
@@ -110,8 +90,8 @@ mixing['s2'] = {
         [75,    0,  0,  0,  0,  0,  0,  0, .1, .2, .3, .4, .5, .5,  1,  1, 1],
     ]) for k in ['m','c','o']
 }
-
-mixing['s3'] = mixing['s1']
+mixing['s1'] = mixing['s2']
+mixing['s3'] = mixing['s2']
 
 class prop_exposed(hpv.Analyzer):
     ''' Store proportion of agents exposed '''
@@ -180,7 +160,7 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
         burnin          = [25,0][debug],
         debut           = debut[setting],
         mixing          = mixing[setting],
-        ms_agent_ratio  = 1,
+        ms_agent_ratio  = 10,
         location        = 'kenya',
         rand_seed       = seed,
     )
@@ -391,7 +371,7 @@ if __name__ == '__main__':
     # Run scenarios
     if 'run_scenarios' in to_run:
         vx_scens = ['routine', 'routine_campaign']
-        n_seeds = [10,1][debug]
+        n_seeds = [5,1][debug]
         alldf, msims = run_scens(settings=settings, vx_scens=vx_scens, n_seeds=n_seeds, verbose=-1, debug=debug)
 
 
@@ -400,7 +380,7 @@ if __name__ == '__main__':
         ut.set_font(size=20)
         fig, axes = pl.subplots(nrows=1, ncols=3, figsize=(24, 8))
         layer_keys = ['Casual']
-        setting_labels = sc.objdict({'s1':'AFS=18, 1y age gap', 's2':'AFS=18, 10y age gap', 's3':'AFS=16, 1y age gap'})
+        setting_labels = sc.objdict({'s1':'AFS=14', 's2':'AFS=16', 's3':'AFS=18'})
 
         for sn,setting in enumerate(settings):
             filename = f'{resfolder}/{setting}.ppl'
@@ -433,7 +413,7 @@ if __name__ == '__main__':
         ut.set_font(size=20)
         fig, axes = pl.subplots(nrows=len(dates), ncols=len(to_plot), figsize=(24, 16))
         colors = sc.gridcolors(len(settings))
-        setting_labels = sc.objdict({'s1':'AFS=18, 1y gap', 's2':'AFS=18, 10y gap', 's3':'AFS=16, 1y gap'})
+        setting_labels = sc.objdict({'s1':'AFS=14', 's2':'AFS=16', 's3':'AFS=18'})
 
         # Make plots
         for cn,reskey in enumerate(to_plot):
@@ -458,33 +438,35 @@ if __name__ == '__main__':
     if 'plot_scenarios' in to_run:
         ut.set_font(size=20)
 
-        settings = sc.objdict({'s1':'AFS=18,\n1y age gap', 's2':'AFS=18,\n10y age gap', 's3':'AFS=16,\n1y age gap'})
-        vx_scens = sc.objdict({'no_vx': 'No vaccination', 'routine': 'Routine', 'routine_campaign':'Campaign'})
+        # settings = sc.objdict({'s1':'AFS=18,\n1y age gap', 's2':'AFS=18,\n10y age gap', 's3':'AFS=16,\n10y age gap'})
+        settings = sc.objdict({'s1':'AFS=14', 's2':'AFS=16', 's3':'AFS=18'})
+        # vx_scens = sc.objdict({'no_vx': 'No vaccination', 'routine': 'Routine', 'routine_campaign':'Campaign'})
+        vx_scens = sc.objdict({'routine': 'Routine', 'routine_campaign':'Campaign'})
+
         bigdf = sc.loadobj(f'{resfolder}/results_uc2.obj')
         colors = sc.gridcolors(len(vx_scens))
         start_year = 2000
         intv_year = 2025
 
-        # for skey,sname in settings.items():
-        #
-        #     fig, ax = pl.subplots(figsize=(16, 8))
-        #
-        #     for vn, vkey, vname in vx_scens.enumitems():
-        #         df = bigdf[(bigdf.setting == skey) & (bigdf.vx_scen == vkey)]
-        #         si = sc.findinds(np.array(df.year), start_year)[0]
-        #         ii = sc.findinds(np.array(df.year), intv_year)[0]
-        #         years = np.array(df.year)[si:]
-        #         best = np.array(df['cancers'])[si:]
-        #         low = np.array(df['cancers_low'])[si:]
-        #         high = np.array(df['cancers_high'])[si:]
-        #         ax.plot(years, best, color=colors[vn], label=vname)
-        #         ax.fill_between(years, low, high, color=colors[vn], alpha=0.3)
-        #     ax.legend(loc='upper left')
-        #     sc.SIticks(ax)
-        #     sc.setylim([0,350])
-        #     fig.tight_layout()
-        #     fig_name = f'{figfolder}/{skey}.png'
-        #     sc.savefig(fig_name, dpi=100)
+        fig, axes = pl.subplots(ncols=len(settings), nrows=1, figsize=(16, 8), sharey=True)
+        for sk, (skey,sname) in enumerate(settings.items()):
+            ax = axes[sk]
+            for vn, vkey, vname in vx_scens.enumitems():
+                df = bigdf[(bigdf.setting == skey) & (bigdf.vx_scen == vkey)]
+                si = sc.findinds(np.array(df.year), start_year)[0]
+                ii = sc.findinds(np.array(df.year), intv_year)[0]
+                years = np.array(df.year)[si:]
+                best = np.array(df['cancers'])[si:]
+                low = np.array(df['cancers_low'])[si:]
+                high = np.array(df['cancers_high'])[si:]
+                ax.plot(years, best, color=colors[vn], label=vname)
+                ax.fill_between(years, low, high, color=colors[vn], alpha=0.3)
+            ax.legend(loc='upper left')
+            ax.set_title(sname)
+            sc.SIticks(ax)
+        fig.tight_layout()
+        fig_name = f'{figfolder}/cancer_comparison.png'
+        sc.savefig(fig_name, dpi=100)
 
         # Bar plots of cancers averted
         cancers_averted = sc.loadobj(f'{resfolder}/cancers_averted_uc2.obj')
