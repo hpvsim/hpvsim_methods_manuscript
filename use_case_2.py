@@ -12,9 +12,13 @@ Here we investigate the potential impact of expanding the age of vaccination
 (EAV) in three different country archetypes that vary according to the average
 age of first sex for girls (AFS) and the rates of sexual mixing between younger
 women and older men, quantified by the average sexual partner age difference (SPAD):
- 1. AFS = 18, SPAD = 1      --- most young girls (<18) will not have been exposed
- 2. AFS = 18, SPAD = 10     --- more girls have been exposed via older partners
- 3. AFS = 16, SPAD = 1      --- more girls exposed via younger AFS
+ 1. AFS = 14, SPAD = 10      --- most young girls (<18) will not have been exposed
+ 2. AFS = 16, SPAD = 10      --- more girls have been exposed via older partners
+ 3. AFS = 18, SPAD = 10      --- more girls exposed via younger AFS
+ 4. AFS = 14, SPAD = 1       --- most young girls (<18) will not have been exposed
+ 5. AFS = 16, SPAD = 1       --- more girls have been exposed via older partners
+ 6. AFS = 18, SPAD = 1       --- more girls exposed via younger AFS
+
 
 *Hypothesis*
 EAV will have the highest impact in Setting 1, followed by Setting 2, then 3.
@@ -28,6 +32,7 @@ import sciris as sc
 import pandas as pd
 import pylab as pl
 import matplotlib as mpl
+import matplotlib.ticker as mtick
 
 # Imports from this repository
 import utils as ut
@@ -44,11 +49,11 @@ to_run = [
     # 'plot_mixing',
     # 'plot_sims',
     'run_scenarios',
-    'plot_scenarios',
+    # 'plot_scenarios',
 ]
 
 #%% Define parameters
-settings = ['s1', 's2', 's3']
+settings = ['s1', 's2', 's3', 's4', 's5', 's6']
 # settings = ['s2', 's3']
 debut = dict()
 mixing = dict()
@@ -67,9 +72,13 @@ debut['s3'] = dict(
     m=dict(dist='normal', par1=19., par2=2.),
 )
 
+debut['s4'] = debut['s1']
+debut['s5'] = debut['s2']
+debut['s6'] = debut['s2']
+
 # Define SPAD for all 3 archetypes
 
-mixing['s2'] = {
+mixing['s1'] = {
     k:np.array([
         #       0,  5,  10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75
         [0,     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
@@ -90,8 +99,35 @@ mixing['s2'] = {
         [75,    0,  0,  0,  0,  0,  0,  0, .1, .2, .3, .4, .5, .5,  1,  1, 1],
     ]) for k in ['m','c','o']
 }
-mixing['s1'] = mixing['s2']
-mixing['s3'] = mixing['s2']
+
+mixing['s2'] = mixing['s1']
+mixing['s3'] = mixing['s1']
+
+# Define SPAD for all 3 archetypes
+mixing['s4'] = {
+    k:np.array([
+        #       0,  5,  10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75
+        [0,     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        [5,     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        [10,    0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        [15,    0,  0,  1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        [20,    0,  0,  1, .5,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        [25,    0,  0,  0,  0, .5,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        [30,    0,  0,  0,  0,  0, .5,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0],
+        [35,    0,  0,  0,  0,  0,  0, .5,  1,  0,  0,  0,  0,  0,  0,  0,  0],
+        [40,    0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0],
+        [45,    0,  0,  0,  0,  0,  0,  0,  0, .5,  1,  0,  0,  0,  0,  0,  0],
+        [50,    0,  0,  0,  0,  0,  0,  0,  0,  0, .5,  1,  0,  0,  0,  0,  0],
+        [55,    0,  0,  0,  0,  0,  0,  0,  0,  0,  0, .5,  1,  0,  0,  0,  0],
+        [60,    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, .5,  1,  0,  0,  0],
+        [65,    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, .5,  1,  0,  0],
+        [70,    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, .5,  1,  0],
+        [75,    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, .5,  1],
+    ]) for k in ['m','c','o']
+}
+
+mixing['s5'] = mixing['s4']
+mixing['s6'] = mixing['s4']
 
 class prop_exposed(hpv.Analyzer):
     ''' Store proportion of agents exposed '''
@@ -371,7 +407,7 @@ if __name__ == '__main__':
     # Run scenarios
     if 'run_scenarios' in to_run:
         vx_scens = ['routine', 'routine_campaign']
-        n_seeds = [5,1][debug]
+        n_seeds = [10,1][debug]
         alldf, msims = run_scens(settings=settings, vx_scens=vx_scens, n_seeds=n_seeds, verbose=-1, debug=debug)
 
 
@@ -449,8 +485,8 @@ if __name__ == '__main__':
         intv_year = 2025
 
         fig, axes = pl.subplots(ncols=len(settings), nrows=1, figsize=(16, 8), sharey=True)
-        for sk, (skey,sname) in enumerate(settings.items()):
-            ax = axes[sk]
+        for sn,skey,sname in settings.enumitems():
+            ax = axes[sn]
             for vn, vkey, vname in vx_scens.enumitems():
                 df = bigdf[(bigdf.setting == skey) & (bigdf.vx_scen == vkey)]
                 si = sc.findinds(np.array(df.year), start_year)[0]
@@ -475,7 +511,7 @@ if __name__ == '__main__':
         quantiles = np.array([0.1,0.5,0.9])
         axtitles = [
             'Proportion exposed by age, 2015',
-            'Cancers averted by\ncatch-up campaign\n (%, 2025-2060)',
+            'Additional cancers averted by\ncatch-up vaccination (%, 2025-2060)',
         ]
 
         # Exposure by age and setting
@@ -499,13 +535,14 @@ if __name__ == '__main__':
             y,ymin,ymax = sc.autolist(), sc.autolist(), sc.autolist()
             for sn,skey,sname in settings.enumitems():
                 res = cancers_averted[skey]
-                lo,med,hi = np.quantile(res,quantiles)
+                lo,med,hi = np.quantile(res,quantiles)*100
                 y += med
                 ymin += med-lo
                 ymax += hi-med
                 ax.bar(x[sn],y[sn], color=colors[sn])
             ax.errorbar(x,y, yerr=[ymin,ymax], fmt="o", color="k")
             ax.set_xticks(x, settings.values())
+            ax.yaxis.set_major_formatter(mtick.PercentFormatter())
             ax.set_title(axtitles[vn+1])
             sc.SIticks(ax)
             fig.tight_layout()
