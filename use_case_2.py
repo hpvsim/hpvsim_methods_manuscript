@@ -217,7 +217,7 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
                 start_year=2015,
                 product='bivalent',
                 eligibility=vax_eligible,
-                age_range=(9, 14),
+                age_range=(9, 10),
                 label='Routine'
             )
             interventions.append(routine_vx)
@@ -230,7 +230,7 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
                 years=[2025],
                 product='bivalent',
                 eligibility=vax_eligible,
-                age_range=(15, 24),
+                age_range=(10, 24),
                 label='Campaign'
             )
             interventions.append(campaign_vx)
