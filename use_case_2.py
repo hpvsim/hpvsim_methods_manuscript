@@ -53,7 +53,7 @@ to_run = [
 ]
 
 #%% Define parameters
-settings = ['s1', 's2', 's3', 's4', 's5', 's6']
+settings = ['s1', 's2', 's3']#, 's4', 's5', 's6']
 # settings = ['s2', 's3']
 debut = dict()
 mixing = dict()
@@ -74,7 +74,7 @@ debut['s3'] = dict(
 
 debut['s4'] = debut['s1']
 debut['s5'] = debut['s2']
-debut['s6'] = debut['s2']
+debut['s6'] = debut['s3']
 
 # Define SPAD for all 3 archetypes
 
@@ -217,7 +217,7 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
                 start_year=2015,
                 product='bivalent',
                 eligibility=vax_eligible,
-                age_range=(9, 10),
+                age_range=(9, 14),
                 label='Routine'
             )
             interventions.append(routine_vx)
@@ -230,7 +230,7 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
                 years=[2025],
                 product='bivalent',
                 eligibility=vax_eligible,
-                age_range=(16, 24),
+                age_range=(15, 24),
                 label='Campaign'
             )
             interventions.append(campaign_vx)
@@ -474,16 +474,13 @@ if __name__ == '__main__':
     if 'plot_scenarios' in to_run:
         ut.set_font(size=20)
 
-        # settings = sc.objdict({'s1':'AFS=18,\n1y age gap', 's2':'AFS=18,\n10y age gap', 's3':'AFS=16,\n10y age gap'})
         settings = sc.objdict({'s1':'AFS=14', 's2':'AFS=16', 's3':'AFS=18'})
-        # vx_scens = sc.objdict({'no_vx': 'No vaccination', 'routine': 'Routine', 'routine_campaign':'Campaign'})
         vx_scens = sc.objdict({'routine': 'Routine', 'routine_campaign':'Campaign'})
 
         bigdf = sc.loadobj(f'{resfolder}/results_uc2.obj')
-        colors = sc.gridcolors(len(vx_scens))
         start_year = 2000
         intv_year = 2025
-
+        colors = sc.gridcolors(len(settings))
         fig, axes = pl.subplots(ncols=len(settings), nrows=1, figsize=(16, 8), sharey=True)
         for sn,skey,sname in settings.enumitems():
             ax = axes[sn]
@@ -497,7 +494,8 @@ if __name__ == '__main__':
                 high = np.array(df['cancers_high'])[si:]
                 ax.plot(years, best, color=colors[vn], label=vname)
                 ax.fill_between(years, low, high, color=colors[vn], alpha=0.3)
-            ax.legend(loc='upper left')
+            if sn == 0:
+                ax.legend(loc='upper left')
             ax.set_title(sname)
             sc.SIticks(ax)
         fig.tight_layout()
@@ -515,7 +513,6 @@ if __name__ == '__main__':
         ]
 
         # Exposure by age and setting
-        colors = sc.gridcolors(len(settings))
         ax = axes[0]
         ages = np.arange(10, 25)
         for sn, skey, sname in settings.enumitems():
