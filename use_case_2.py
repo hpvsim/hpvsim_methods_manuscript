@@ -48,8 +48,8 @@ to_run = [
     # 'run_sims',
     # 'plot_mixing',
     # 'plot_sims',
-    'run_scenarios',
-    # 'plot_scenarios',
+    # 'run_scenarios',
+    'plot_scenarios',
 ]
 
 #%% Define parameters
@@ -191,12 +191,12 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
     pars = dict(
         n_agents        = [50e3,5e3][debug],
         dt              = [0.5,1.0][debug],
-        start           = [1975,2000][debug],
+        start           = [1960,2000][debug],
         end             = 2060,
-        burnin          = [25,0][debug],
+        # burnin          = [25,0][debug],
         debut           = debut[setting],
         mixing          = mixing[setting],
-        ms_agent_ratio  = 10,
+        ms_agent_ratio  = 100,
         location        = 'kenya',
         rand_seed       = seed,
     )
