@@ -304,6 +304,9 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug, e
 
         # Store main results
         df['year']      = msim.results['year']
+        df['asr_cancer_incidence'] = msim.results['asr_cancer_incidence'][:]
+        df['asr_cancer_incidence_low'] = msim.results['asr_cancer_incidence'].low
+        df['asr_cancer_incidence_high'] = msim.results['asr_cancer_incidence'].high
         df['cancers']   = msim.results['cancers'][:]
         df['cancers_low']   = msim.results['cancers'].low
         df['cancers_high']   = msim.results['cancers'].high
