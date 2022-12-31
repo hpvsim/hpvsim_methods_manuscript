@@ -134,11 +134,12 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
         dt              = [0.5,1.0][debug],
         start           = [1950,2000][debug],
         end             = 2060,
-        # burnin          = [25,0][debug],
         debut           = debut[setting],
         ms_agent_ratio  = 100,
-        # location        = 'kenya',
         rand_seed       = seed,
+        beta=0.3,
+        rel_trans_cin2=0.5,
+        rel_trans_cin3=0.25
     )
 
     # Interventions
@@ -154,7 +155,7 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
             routine_vx = hpv.routine_vx(
                 prob=.5,
                 sex=0,
-                start_year=2015,
+                start_year=2020,
                 product='bivalent',
                 eligibility=vax_eligible,
                 age_range=(9, 10),
@@ -167,7 +168,7 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
             campaign_vx = hpv.campaign_vx(
                 prob=.5,
                 sex=0,
-                years=[2025],
+                years=[2020],
                 product='bivalent',
                 eligibility=vax_eligible,
                 age_range=(10, 24),
@@ -184,6 +185,13 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
     ]
 
     sim = hpv.Sim(pars, interventions=interventions, analyzers=analyzers)
+    sim.initialize()
+    sim['genotype_pars']['hpv18'].rel_beta = 1.5
+    sim['genotype_pars']['hpv18'].dur_dysp['par1'] = 5
+    sim['genotype_pars']['hpv18'].dur_dysp['par2'] = 2
+    sim['genotype_pars']['hpv18'].cancer_prob = 0.005
+    sim['genotype_pars']['hpv16'].cancer_prob = 0.017
+    sim['genotype_pars']['hrhpv'].cancer_prob = 0.002
 
     # Store metadata
     if meta is not None:
@@ -271,7 +279,7 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug, e
 
     # Calculate cancers averted for each seed
     cancers_averted = sc.objdict()
-    intv_year = 2025
+    intv_year = 2020
     si = sc.findinds(sim.res_yearvec, intv_year)[0]
     for i_se, setting in enumerate(settings):
         cancers_averted[setting] = sc.autolist()
@@ -424,26 +432,27 @@ if __name__ == '__main__':
         start_year = 2000
         intv_year = 2025
         colors = sc.gridcolors(len(settings))
-        fig, axes = pl.subplots(ncols=len(settings), nrows=1, figsize=(16, 8), sharey=True)
-        for sn,skey,sname in settings.enumitems():
-            ax = axes[sn]
-            for vn, vkey, vname in vx_scens.enumitems():
-                df = bigdf[(bigdf.setting == skey) & (bigdf.vx_scen == vkey)]
-                si = sc.findinds(np.array(df.year), start_year)[0]
-                ii = sc.findinds(np.array(df.year), intv_year)[0]
-                years = np.array(df.year)[si:]
-                best = np.array(df['cancers'])[si:]
-                low = np.array(df['cancers_low'])[si:]
-                high = np.array(df['cancers_high'])[si:]
-                ax.plot(years, best, color=colors[vn], label=vname)
-                ax.fill_between(years, low, high, color=colors[vn], alpha=0.3)
-            if sn == 0:
-                ax.legend(loc='upper left')
-            ax.set_title(sname)
-            sc.SIticks(ax)
-        fig.tight_layout()
-        fig_name = f'{figfolder}/cancer_comparison.png'
-        sc.savefig(fig_name, dpi=100)
+        for res in ['asr_cancer_incidence', 'cancers']:
+            fig, axes = pl.subplots(ncols=len(settings), nrows=1, figsize=(16, 8), sharey=True)
+            for sn,skey,sname in settings.enumitems():
+                ax = axes[sn]
+                for vn, vkey, vname in vx_scens.enumitems():
+                    df = bigdf[(bigdf.setting == skey) & (bigdf.vx_scen == vkey)]
+                    si = sc.findinds(np.array(df.year), start_year)[0]
+                    ii = sc.findinds(np.array(df.year), intv_year)[0]
+                    years = np.array(df.year)[si:]
+                    best = np.array(df[res])[si:]
+                    low = np.array(df[f'{res}_low'])[si:]
+                    high = np.array(df[f'{res}_high'])[si:]
+                    ax.plot(years, best, color=colors[vn], label=vname)
+                    ax.fill_between(years, low, high, color=colors[vn], alpha=0.3)
+                if sn == 0:
+                    ax.legend(loc='upper left')
+                ax.set_title(sname)
+                sc.SIticks(ax)
+            fig.tight_layout()
+            fig_name = f'{figfolder}/{res}_comparison.png'
+            sc.savefig(fig_name, dpi=100)
 
         # Bar plots of cancers averted
         cancers_averted = sc.loadobj(f'{resfolder}/cancers_averted_uc2.obj')
