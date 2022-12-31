@@ -151,27 +151,27 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
         vax_eligible = lambda sim: np.isnan(sim.people.date_vaccinated)
 
         if 'routine' in vx_scen:
-            # Routine vaccination
+            # Routine vaccination, 9-14
             routine_vx = hpv.routine_vx(
                 prob=.5,
                 sex=0,
-                start_year=2020,
+                start_year=2025,
                 product='bivalent',
                 eligibility=vax_eligible,
-                age_range=(9, 10),
+                age_range=(9, 14),
                 label='Routine'
             )
             interventions.append(routine_vx)
 
         if 'campaign' in vx_scen:
-            # One-off catch-up for people 10-24
+            # One-off catch-up for people 15-24
             campaign_vx = hpv.campaign_vx(
                 prob=.5,
                 sex=0,
-                years=[2020],
+                years=[2025],
                 product='bivalent',
                 eligibility=vax_eligible,
-                age_range=(10, 24),
+                age_range=(15, 24),
                 label='Campaign'
             )
             interventions.append(campaign_vx)
@@ -279,7 +279,7 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug, e
 
     # Calculate cancers averted for each seed
     cancers_averted = sc.objdict()
-    intv_year = 2020
+    intv_year = 2025
     si = sc.findinds(sim.res_yearvec, intv_year)[0]
     for i_se, setting in enumerate(settings):
         cancers_averted[setting] = sc.autolist()
