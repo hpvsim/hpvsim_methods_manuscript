@@ -14,6 +14,7 @@ import seaborn as sns
 
 #%% Plotting function
 def plot_fig4(calib_pars=None):
+
     # Group genotypes
     genotypes = ['hpv16', 'hpv18', 'hrhpv']
     sim = hpv.Sim(genotypes=genotypes)
@@ -53,71 +54,86 @@ def plot_fig4(calib_pars=None):
     prog_rate = [genotype_pars[genotype_map[g]]['prog_rate'] for g in range(ng)]
     cancer_prob = [genotype_pars[genotype_map[g]]['cancer_prob'] for g in range(ng)]
 
-    ut.set_font(size=20)
-    # set palette
+
+    ####################
+    # Make figure, set fonts and colors
+    ####################
+    ut.set_font(size=32)
     colors = sc.gridcolors(10)
-    n_samples = 10
     cmap = pl.cm.Oranges([0.25, 0.5, 0.75, 1])
+    fig, ax = pl.subplot_mosaic('AB;CD;EF', figsize=(16, 20))
 
-    fig, ax = pl.subplots(2, 3, figsize=(16, 10))
-    pn = 0
-    x = np.linspace(0.01, 3, 200)
+    ####################
+    # Panel A and B
+    ####################
 
+    x = np.linspace(0.01, 3, 200) # Make an array of durations 0-3 years
+    glabels = [16,18,'OHR']
+
+    # Loop over genotypes, plot each one
     for gi, gtype in enumerate(genotypes):
         sigma, scale = ut.lognorm_params(genotype_pars[gtype]['dur_precin']['par1'],
                                          genotype_pars[gtype]['dur_precin']['par2'])
         rv = lognorm(sigma, 0, scale)
-        ax[0, 0].plot(x, rv.pdf(x), color=colors[gi], lw=2, label=gtype.upper())
-        ax[1, 0].plot(x, ut.logf1(x, genotype_pars[gtype]['dysp_rate']), color=colors[gi], lw=2, label=gtype.upper())
-        pn += 1
+        ax['A'].plot(x, rv.pdf(x), color=colors[gi], lw=2, label=glabels[gi])
+        ax['B'].plot(x, ut.logf1(x, genotype_pars[gtype]['dysp_rate']), color=colors[gi], lw=2, label=gtype.upper())
 
-        ax[1, 0].set_xlabel("Duration of infection prior to\ncontrol/clearance/dysplasia (months)")
-        for row in [0, 1]:
-            ax[row, 0].set_ylabel("")
-            ax[row, 0].grid()
-            ax[row, 0].set_xticks(np.arange(4))
-            ax[row, 0].set_xticklabels([0, 12, 24, 36])
-    ax[0, 0].set_ylabel("Frequency")
-    ax[1, 0].set_ylabel("Probability of developing\ndysplasia")
-    ax[0, 0].set_xlabel("Duration of infection prior to\ncontrol/clearance/dysplasia (months)")
+    # Axis labeling and other settings
+    ax['B'].set_xlabel("Duration of infection prior to\ncontrol/clearance/dysplasia (months)")
+    for axn in ['A', 'B']:
+        ax[axn].set_ylabel("")
+        ax[axn].grid()
+        ax[axn].set_xticks(np.arange(4))
+        ax[axn].set_xticklabels([0, 12, 24, 36])
+    ax['A'].set_ylabel("Frequency")
+    ax['B'].set_ylabel("Probability of developing\ndysplasia")
+    ax['A'].set_xlabel("Duration of infection prior to\ncontrol/clearance/dysplasia (months)")
 
-    pn = 0
+    ax['A'].legend(fontsize=28, frameon=False)
+
+    ####################
+    # Panel C and D
+    ####################
+
     thisx = np.linspace(0.01, 25, 100)
+    n_samples = 10
 
     # Durations and severity of dysplasia
     for gi, gtype in enumerate(genotypes):
-        ai=1
         sigma, scale = ut.lognorm_params(genotype_pars[gtype]['dur_dysp']['par1'],
                                          genotype_pars[gtype]['dur_dysp']['par2'])
         rv = lognorm(sigma, 0, scale)
-        ax[0, ai].plot(thisx, rv.pdf(thisx), color=colors[gi], lw=2, label=gtype.upper())
-        ax[1, ai].plot(thisx, ut.logf1(thisx, genotype_pars[gtype]['prog_rate']), color=colors[gi], lw=2,
+        ax['C'].plot(thisx, rv.pdf(thisx), color=colors[gi], lw=2, label=gtype.upper())
+        ax['D'].plot(thisx, ut.logf1(thisx, genotype_pars[gtype]['prog_rate']), color=colors[gi], lw=2,
                        label=gtype.upper())
         for year in range(1, 26):
             peaks = ut.logf1(year, hpu.sample(dist='normal', par1=genotype_pars[gtype]['prog_rate'],
                                               par2=genotype_pars[gtype]['prog_rate_sd'], size=n_samples))
-            ax[1, ai].plot([year] * n_samples, peaks, color=colors[gi], lw=0, marker='o', alpha=0.5)
-        pn += 1
+            ax['D'].plot([year] * n_samples, peaks, color=colors[gi], lw=0, marker='o', alpha=0.5)
 
-        ax[0, ai].set_ylabel("")
-        ax[0, ai].legend(fontsize=18)
-        ax[0, ai].grid()
-        ax[0, ai].set_ylabel("Frequency")
-        ax[0, ai].set_xlabel("Duration of dysplasia prior to\nregression/cancer (years)")
+    ax['C'].set_ylabel("")
+    # ax['C'].legend(fontsize=18)
+    ax['C'].grid()
+    ax['C'].set_ylabel("Frequency")
+    ax['C'].set_xlabel("Duration of dysplasia prior to\nregression/cancer (years)")
 
-        # Severity
-        ax[1, ai].set_xlabel("Duration of dysplasia prior to\nregression/cancer (years)")
-        ax[1, ai].set_ylabel("Clinical severity")
-        ax[1, ai].set_ylim([0, 1])
-        ax[1, ai].axhline(y=0.33, ls=':', c='k')
-        ax[1, ai].axhline(y=0.67, ls=':', c='k')
-        ax[1, ai].axhspan(0, 0.33, color=cmap[0], alpha=.4)
-        ax[1, ai].axhspan(0.33, 0.67, color=cmap[1], alpha=.4)
-        ax[1, ai].axhspan(0.67, 1, color=cmap[2], alpha=.4)
-        ax[1, ai].text(-0.3, 0.08, 'CIN1', rotation=90)
-        ax[1, ai].text(-0.3, 0.4, 'CIN2', rotation=90)
-        ax[1, ai].text(-0.3, 0.73, 'CIN3', rotation=90)
+    # Severity
+    ax['D'].set_xlabel("Duration of dysplasia prior to\nregression/cancer (years)")
+    ax['D'].set_ylabel("Clinical severity")
+    ax['D'].set_ylim([0, 1])
+    ax['D'].axhline(y=0.33, ls=':', c='k')
+    ax['D'].axhline(y=0.67, ls=':', c='k')
+    ax['D'].axhspan(0, 0.33, color=cmap[0], alpha=.4)
+    ax['D'].axhspan(0.33, 0.67, color=cmap[1], alpha=.4)
+    ax['D'].axhspan(0.67, 1, color=cmap[2], alpha=.4)
+    ax['D'].text(-0.3, 0.08, 'CIN1', rotation=90)
+    ax['D'].text(-0.3, 0.4, 'CIN2', rotation=90)
+    ax['D'].text(-0.3, 0.73, 'CIN3', rotation=90)
 
+
+    ####################
+    # Panel E
+    ####################
 
     # This section calculates the overall share of outcomes for people infected with each genotype
     dysp_shares = [] # Initialize the share of people who develop ANY dysplasia
@@ -182,8 +198,8 @@ def plot_fig4(calib_pars=None):
         cin3shares.append(cin3_share * dysp_shares[g])
         cancershares.append(cancer_share * dysp_shares[g])
 
-    ai=2
 
+    # Final plot
     bottom = np.zeros(ng)
     all_shares = [noneshares,
                   cin1shares,
@@ -196,21 +212,26 @@ def plot_fig4(calib_pars=None):
         ydata = np.array(all_shares[gn])
         #if len(ydata.shape) > 1: ydata = ydata[:, 0]
         color = cmap[gn-1,:] if gn > 0 else 'gray'
-        ax[1,ai].bar(np.arange(1, ng + 1), ydata, color=color, bottom=bottom, label=grade)
+        ax['E'].bar(np.arange(1, ng + 1), ydata, color=color, bottom=bottom, label=grade)
         bottom = bottom + ydata
 
-    ax[1,ai].set_xticks(np.arange(1,ng + 1))
-    ax[1,ai].set_xticklabels(gtypes)
-    ax[1,ai].set_ylabel("")
-    ax[1,ai].legend(bbox_to_anchor=(1.05,1))
+    ax['E'].set_xticks(np.arange(1,ng + 1))
+    ax['E'].set_xticklabels(glabels)
+    ax['E'].set_ylabel("")
+    ax['E'].set_ylabel("Distribution of outcomes")
+    # ax['E'].legend(bbox_to_anchor=(1.1, 1))
+    handles, labels = ax['E'].get_legend_handles_labels()
 
+    ax['F'].set_axis_off()
+    ax['F'].legend(handles, labels, bbox_to_anchor=(0.5, 1), frameon=False)
 
-    pl.figtext(0.06, 0.94, 'A', fontweight='bold', fontsize=30)
-    pl.figtext(0.375, 0.94, 'C', fontweight='bold', fontsize=30)
-    pl.figtext(0.69, 0.94, 'E', fontweight='bold', fontsize=30)
-    pl.figtext(0.06, 0.51, 'B', fontweight='bold', fontsize=30)
-    pl.figtext(0.375, 0.51, 'D', fontweight='bold', fontsize=30)
-    pl.figtext(0.69, 0.51, 'F', fontweight='bold', fontsize=30)
+    fs=40
+    pl.figtext(0.06, 0.975, 'A', fontweight='bold', fontsize=fs)
+    pl.figtext(0.52, 0.975, 'B', fontweight='bold', fontsize=fs)
+    pl.figtext(0.06, 0.62, 'C', fontweight='bold', fontsize=fs)
+    pl.figtext(0.52, 0.62, 'D', fontweight='bold', fontsize=fs)
+    pl.figtext(0.06, 0.3, 'E', fontweight='bold', fontsize=fs)
+    # pl.figtext(0.69, 0.51, 'F', fontweight='bold', fontsize=30)
 
     fig.tight_layout()
     pl.savefig(f"{ut.figfolder}/fig4.png", dpi=100)
