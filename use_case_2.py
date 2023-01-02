@@ -10,18 +10,9 @@ them being exposed to HPV (i.e. before they become sexually active).
 
 Here we investigate the potential impact of expanding the age of vaccination
 (EAV) in three different country archetypes that vary according to the average
-age of first sex for girls (AFS) and the rates of sexual mixing between younger
-women and older men, quantified by the average sexual partner age difference (SPAD):
- 1. AFS = 14, SPAD = 10      --- most young girls (<18) will not have been exposed
- 2. AFS = 16, SPAD = 10      --- more girls have been exposed via older partners
- 3. AFS = 18, SPAD = 10      --- more girls exposed via younger AFS
- 4. AFS = 14, SPAD = 1       --- most young girls (<18) will not have been exposed
- 5. AFS = 16, SPAD = 1       --- more girls have been exposed via older partners
- 6. AFS = 18, SPAD = 1       --- more girls exposed via younger AFS
+age of first sex for girls (AFS)
 
-
-*Hypothesis*
-EAV will have the highest impact in Setting 1, followed by Setting 2, then 3.
+To run this script, uncomment the sections you wish to run from the list to_run
 """
 
 import hpvsim as hpv
@@ -36,7 +27,6 @@ import matplotlib.ticker as mtick
 
 # Imports from this repository
 import utils as ut
-
 
 
 #%% Run configurations
