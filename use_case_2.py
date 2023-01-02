@@ -10,14 +10,9 @@ them being exposed to HPV (i.e. before they become sexually active).
 
 Here we investigate the potential impact of expanding the age of vaccination
 (EAV) in three different country archetypes that vary according to the average
-age of first sex for girls (AFS) and the rates of sexual mixing between younger
-women and older men, quantified by the average sexual partner age difference (SPAD):
- 1. AFS = 18, SPAD = 1      --- most young girls (<18) will not have been exposed
- 2. AFS = 18, SPAD = 10     --- more girls have been exposed via older partners
- 3. AFS = 16, SPAD = 1      --- more girls exposed via younger AFS
+age of first sex for girls (AFS)
 
-*Hypothesis*
-EAV will have the highest impact in Setting 1, followed by Setting 2, then 3.
+To run this script, uncomment the sections you wish to run from the list to_run
 """
 
 import hpvsim as hpv
@@ -28,10 +23,10 @@ import sciris as sc
 import pandas as pd
 import pylab as pl
 import matplotlib as mpl
+import matplotlib.ticker as mtick
 
 # Imports from this repository
 import utils as ut
-
 
 
 #%% Run configurations
@@ -50,68 +45,20 @@ to_run = [
 #%% Define parameters
 settings = ['s1', 's2', 's3']
 debut = dict()
-mixing = dict()
 
 # Define ASF for all 3 archetypes
 debut['s1'] = dict(
-    f=dict(dist='normal', par1=18., par2=2.),
-    m=dict(dist='normal', par1=19., par2=2.),
+    f=dict(dist='normal', par1=14., par2=2.),
+    m=dict(dist='normal', par1=15., par2=2.),
 )
 debut['s2'] = dict(
-    f=dict(dist='normal', par1=18., par2=2.),
-    m=dict(dist='normal', par1=20., par2=2.),
-)
-debut['s3'] = dict(
     f=dict(dist='normal', par1=16., par2=2.),
     m=dict(dist='normal', par1=17., par2=2.),
 )
-
-# Define SPAD for all 3 archetypes
-mixing['s1'] = {
-    k:np.array([
-        #       0,  5,  10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75
-        [0,     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [5,     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [10,    0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [15,    0,  0,  1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [20,    0,  0,  1, .5,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [25,    0,  0,  0,  0, .5,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [30,    0,  0,  0,  0,  0, .5,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [35,    0,  0,  0,  0,  0,  0, .5,  1,  0,  0,  0,  0,  0,  0,  0,  0],
-        [40,    0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0,  0,  0],
-        [45,    0,  0,  0,  0,  0,  0,  0,  0, .5,  1,  0,  0,  0,  0,  0,  0],
-        [50,    0,  0,  0,  0,  0,  0,  0,  0,  0, .5,  1,  0,  0,  0,  0,  0],
-        [55,    0,  0,  0,  0,  0,  0,  0,  0,  0,  0, .5,  1,  0,  0,  0,  0],
-        [60,    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, .5,  1,  0,  0,  0],
-        [65,    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, .5,  1,  0,  0],
-        [70,    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, .5,  1,  0],
-        [75,    0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, .5,  1],
-    ]) for k in ['m','c','o']
-}
-
-mixing['s2'] = {
-    k:np.array([
-        #       0,  5,  10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75
-        [0,     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [5,     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [10,    0,  0,  1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [15,    0,  0,  1, .5,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [20,    0,  0,  1, .5, .5,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [25,    0,  0,  0,  1, .5, .5,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [30,    0,  0,  0, .5,  1, .5, .5,  0,  0,  0,  0,  0,  0,  0,  0,  0],
-        [35,    0,  0,  0, .5, .5,  1, .5, .5,  0,  0,  0,  0,  0,  0,  0,  0],
-        [40,    0,  0,  0, .4, .5, .5,  1, .5, .5,  0,  0,  0,  0,  0,  0,  0],
-        [45,    0,  0,  0, .3, .4, .5, .5,  1, .5, .5,  0,  0,  0,  0,  0,  0],
-        [50,    0,  0,  0, .2, .3, .4, .5, .5,  1, .5, .5,  0,  0,  0,  0,  0],
-        [55,    0,  0,  0, .1, .2, .3, .4, .5, .5,  1, .5, .5,  0,  0,  0,  0],
-        [60,    0,  0,  0,  0, .1, .2, .3, .4, .5, .5,  1, .5, .5,  0,  0,  0],
-        [65,    0,  0,  0,  0,  0, .1, .2, .3, .4, .5, .5,  1, .5, .5,  0,  0],
-        [70,    0,  0,  0,  0,  0,  0, .1, .2, .3, .4, .5, .5,  1, .5,  1, .5],
-        [75,    0,  0,  0,  0,  0,  0,  0, .1, .2, .3, .4, .5, .5,  1,  1, 1],
-    ]) for k in ['m','c','o']
-}
-
-mixing['s3'] = mixing['s1']
+debut['s3'] = dict(
+    f=dict(dist='normal', par1=18., par2=2.),
+    m=dict(dist='normal', par1=19., par2=2.),
+)
 
 class prop_exposed(hpv.Analyzer):
     ''' Store proportion of agents exposed '''
@@ -175,14 +122,14 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
     pars = dict(
         n_agents        = [50e3,5e3][debug],
         dt              = [0.5,1.0][debug],
-        start           = [1975,2000][debug],
+        start           = [1950,2000][debug],
         end             = 2060,
-        burnin          = [25,0][debug],
         debut           = debut[setting],
-        mixing          = mixing[setting],
-        ms_agent_ratio  = 1,
-        location        = 'kenya',
+        ms_agent_ratio  = 100,
         rand_seed       = seed,
+        beta=0.3,
+        rel_trans_cin2=0.5,
+        rel_trans_cin3=0.25
     )
 
     # Interventions
@@ -194,27 +141,27 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
         vax_eligible = lambda sim: np.isnan(sim.people.date_vaccinated)
 
         if 'routine' in vx_scen:
-            # Routine vaccination
+            # Routine vaccination, 9-14
             routine_vx = hpv.routine_vx(
                 prob=.5,
                 sex=0,
-                start_year=2015,
+                start_year=2025,
                 product='bivalent',
                 eligibility=vax_eligible,
-                age_range=(9, 10),
+                age_range=(9, 14),
                 label='Routine'
             )
             interventions.append(routine_vx)
 
         if 'campaign' in vx_scen:
-            # One-off catch-up for people 10-24
+            # One-off catch-up for people 15-24
             campaign_vx = hpv.campaign_vx(
                 prob=.5,
                 sex=0,
                 years=[2025],
                 product='bivalent',
                 eligibility=vax_eligible,
-                age_range=(16, 24),
+                age_range=(15, 24),
                 label='Campaign'
             )
             interventions.append(campaign_vx)
@@ -228,6 +175,13 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
     ]
 
     sim = hpv.Sim(pars, interventions=interventions, analyzers=analyzers)
+    sim.initialize()
+    sim['genotype_pars']['hpv18'].rel_beta = 1.5
+    sim['genotype_pars']['hpv18'].dur_dysp['par1'] = 5
+    sim['genotype_pars']['hpv18'].dur_dysp['par2'] = 2
+    sim['genotype_pars']['hpv18'].cancer_prob = 0.005
+    sim['genotype_pars']['hpv16'].cancer_prob = 0.017
+    sim['genotype_pars']['hrhpv'].cancer_prob = 0.002
 
     # Store metadata
     if meta is not None:
@@ -348,6 +302,9 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug, e
 
         # Store main results
         df['year']      = msim.results['year']
+        df['asr_cancer_incidence'] = msim.results['asr_cancer_incidence'][:]
+        df['asr_cancer_incidence_low'] = msim.results['asr_cancer_incidence'].low
+        df['asr_cancer_incidence_high'] = msim.results['asr_cancer_incidence'].high
         df['cancers']   = msim.results['cancers'][:]
         df['cancers_low']   = msim.results['cancers'].low
         df['cancers_high']   = msim.results['cancers'].high
@@ -400,7 +357,7 @@ if __name__ == '__main__':
         ut.set_font(size=20)
         fig, axes = pl.subplots(nrows=1, ncols=3, figsize=(24, 8))
         layer_keys = ['Casual']
-        setting_labels = sc.objdict({'s1':'AFS=18, 1y age gap', 's2':'AFS=18, 10y age gap', 's3':'AFS=16, 1y age gap'})
+        setting_labels = sc.objdict({'s1':'AFS=14', 's2':'AFS=16', 's3':'AFS=18'})
 
         for sn,setting in enumerate(settings):
             filename = f'{resfolder}/{setting}.ppl'
@@ -433,7 +390,7 @@ if __name__ == '__main__':
         ut.set_font(size=20)
         fig, axes = pl.subplots(nrows=len(dates), ncols=len(to_plot), figsize=(24, 16))
         colors = sc.gridcolors(len(settings))
-        setting_labels = sc.objdict({'s1':'AFS=18, 1y gap', 's2':'AFS=18, 10y gap', 's3':'AFS=16, 1y gap'})
+        setting_labels = sc.objdict({'s1':'AFS=14', 's2':'AFS=16', 's3':'AFS=18'})
 
         # Make plots
         for cn,reskey in enumerate(to_plot):
@@ -458,33 +415,34 @@ if __name__ == '__main__':
     if 'plot_scenarios' in to_run:
         ut.set_font(size=20)
 
-        settings = sc.objdict({'s1':'AFS=18,\n1y age gap', 's2':'AFS=18,\n10y age gap', 's3':'AFS=16,\n1y age gap'})
-        vx_scens = sc.objdict({'no_vx': 'No vaccination', 'routine': 'Routine', 'routine_campaign':'Campaign'})
+        settings = sc.objdict({'s1':'AFS=14', 's2':'AFS=16', 's3':'AFS=18'})
+        vx_scens = sc.objdict({'routine': 'Routine', 'routine_campaign':'Campaign'})
+
         bigdf = sc.loadobj(f'{resfolder}/results_uc2.obj')
-        colors = sc.gridcolors(len(vx_scens))
         start_year = 2000
         intv_year = 2025
-
-        # for skey,sname in settings.items():
-        #
-        #     fig, ax = pl.subplots(figsize=(16, 8))
-        #
-        #     for vn, vkey, vname in vx_scens.enumitems():
-        #         df = bigdf[(bigdf.setting == skey) & (bigdf.vx_scen == vkey)]
-        #         si = sc.findinds(np.array(df.year), start_year)[0]
-        #         ii = sc.findinds(np.array(df.year), intv_year)[0]
-        #         years = np.array(df.year)[si:]
-        #         best = np.array(df['cancers'])[si:]
-        #         low = np.array(df['cancers_low'])[si:]
-        #         high = np.array(df['cancers_high'])[si:]
-        #         ax.plot(years, best, color=colors[vn], label=vname)
-        #         ax.fill_between(years, low, high, color=colors[vn], alpha=0.3)
-        #     ax.legend(loc='upper left')
-        #     sc.SIticks(ax)
-        #     sc.setylim([0,350])
-        #     fig.tight_layout()
-        #     fig_name = f'{figfolder}/{skey}.png'
-        #     sc.savefig(fig_name, dpi=100)
+        colors = sc.gridcolors(len(settings))
+        for res in ['asr_cancer_incidence', 'cancers']:
+            fig, axes = pl.subplots(ncols=len(settings), nrows=1, figsize=(16, 8), sharey=True)
+            for sn,skey,sname in settings.enumitems():
+                ax = axes[sn]
+                for vn, vkey, vname in vx_scens.enumitems():
+                    df = bigdf[(bigdf.setting == skey) & (bigdf.vx_scen == vkey)]
+                    si = sc.findinds(np.array(df.year), start_year)[0]
+                    ii = sc.findinds(np.array(df.year), intv_year)[0]
+                    years = np.array(df.year)[si:]
+                    best = np.array(df[res])[si:]
+                    low = np.array(df[f'{res}_low'])[si:]
+                    high = np.array(df[f'{res}_high'])[si:]
+                    ax.plot(years, best, color=colors[vn], label=vname)
+                    ax.fill_between(years, low, high, color=colors[vn], alpha=0.3)
+                if sn == 0:
+                    ax.legend(loc='upper left')
+                ax.set_title(sname)
+                sc.SIticks(ax)
+            fig.tight_layout()
+            fig_name = f'{figfolder}/{res}_comparison.png'
+            sc.savefig(fig_name, dpi=100)
 
         # Bar plots of cancers averted
         cancers_averted = sc.loadobj(f'{resfolder}/cancers_averted_uc2.obj')
@@ -493,11 +451,10 @@ if __name__ == '__main__':
         quantiles = np.array([0.1,0.5,0.9])
         axtitles = [
             'Proportion exposed by age, 2015',
-            'Cancers averted by\ncatch-up campaign\n (%, 2025-2060)',
+            'Additional cancers averted by\ncatch-up vaccination (%, 2025-2060)',
         ]
 
         # Exposure by age and setting
-        colors = sc.gridcolors(len(settings))
         ax = axes[0]
         ages = np.arange(10, 25)
         for sn, skey, sname in settings.enumitems():
@@ -517,13 +474,14 @@ if __name__ == '__main__':
             y,ymin,ymax = sc.autolist(), sc.autolist(), sc.autolist()
             for sn,skey,sname in settings.enumitems():
                 res = cancers_averted[skey]
-                lo,med,hi = np.quantile(res,quantiles)
+                lo,med,hi = np.quantile(res,quantiles)*100
                 y += med
                 ymin += med-lo
                 ymax += hi-med
                 ax.bar(x[sn],y[sn], color=colors[sn])
             ax.errorbar(x,y, yerr=[ymin,ymax], fmt="o", color="k")
             ax.set_xticks(x, settings.values())
+            ax.yaxis.set_major_formatter(mtick.PercentFormatter())
             ax.set_title(axtitles[vn+1])
             sc.SIticks(ax)
             fig.tight_layout()
