@@ -14,6 +14,7 @@ import seaborn as sns
 
 #%% Plotting function
 def plot_fig4(calib_pars=None):
+
     # Group genotypes
     genotypes = ['hpv16', 'hpv18', 'hrhpv']
     sim = hpv.Sim(genotypes=genotypes)
