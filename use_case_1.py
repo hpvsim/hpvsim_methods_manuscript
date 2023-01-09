@@ -24,7 +24,8 @@ resfolder = 'results'
 figfolder = 'figures'
 to_run = [
     # 'run_scenarios',
-    'plot_scenarios',
+    'run_cea',
+    # 'plot_scenarios',
 ]
 
 
@@ -151,6 +152,78 @@ def run_scens(sim=None, seed=0, n_seeds=3, meta=None, verbose=0, debug=debug):
     return scens
 
 
+def run_cea():
+    scens = sc.loadobj(f'{resfolder}/uc1_scens.obj')
+
+    # Extract number of products used in screening, triage, and treatment from each scenario
+    s0 = scens.sims[0][0]
+    s2 = scens.sims[1][0]
+    s3 = scens.sims[2][0]
+    si = sc.findinds(s2.res_yearvec, 2025)[0]
+    pop_scale = 1250 # Approximate number of people represented by each agent - assumes pop size of 62.5m in 1975
+
+    products = {
+        'algo2': {
+            'hpv primary':  s2.get_intervention('hpv primary').n_products_used[si:]*pop_scale,
+            'ablation':     s2.get_intervention('ablation').n_products_used[si:]*pop_scale,
+        },
+        'algo3': {
+            'cytology':     s3.get_intervention('cytology').n_products_used[si:]*pop_scale,
+            'hpv triage':   s3.get_intervention('hpv triage').n_products_used[si:]*pop_scale,
+            'colposcopy':   s3.get_intervention('colposcopy').n_products_used[si:]*pop_scale,
+            'ablation':     s3.get_intervention('ablation').n_products_used[si:]*pop_scale,
+        }
+    }
+
+    # Total products
+    total_products = {}
+    for algo in ['algo2', 'algo3']:
+        total_products[algo] = {}
+        for product_name, products_used in products[algo].items():
+            total_products[algo][product_name] = sum(products_used)
+
+    # Create a hypothetical dataframe of costs
+    screen_cost = 1
+    treat_cost = 1*4
+    costs_threshold = {'hpv primary': screen_cost, 'cytology': screen_cost, 'hpv triage': screen_cost, 'colposcopy': screen_cost, 'ablation': treat_cost}
+    costs = {'hpv primary': 5, 'cytology': 12.5, 'hpv triage': 5, 'colposcopy': 25, 'ablation': 50}
+
+    # Dicsounted costs
+    discounted_costs = {}
+    len_t = s2.res_tvec[-1]-s2.res_tvec[si]+1
+    dr = 0.03 # Discounting rate
+    for product_name, cost in costs.items():
+        discounted_costs[product_name] = cost/(1+dr)**np.arange(len_t)
+
+    # Calculate the total cost of each
+    total_costs = {}
+    for algo in ['algo2', 'algo3']:
+        total_costs[algo] = {}
+        total_costs[algo]['total'] = 0
+        for product_name, products_used in products[algo].items():
+            total_costs[algo][product_name] = sum(discounted_costs[product_name] * products[algo][product_name])
+            total_costs[algo]['total'] += total_costs[algo][product_name]
+
+    # Impact
+    discounted_impact = {
+        'algo2': sum((s0.results.cancers[si:] - s2.results.cancers[si:])/(1 + dr) ** np.arange(len_t)),
+        'algo3': sum((s0.results.cancers[si:] - s3.results.cancers[si:]) / (1 + dr) ** np.arange(len_t))
+    }
+
+    # ICERs
+    icers = {
+        'algo2': total_costs['algo2']['total'] / discounted_impact['algo2'],
+        'algo3': total_costs['algo3']['total'] / discounted_impact['algo3']
+    }
+
+    # Print results
+    print(f"Algorithm 2: {total_costs['algo2']['total']}")
+    print(f"Algorithm 3: {total_costs['algo3']['total']}")
+
+    print(f"Algorithm 2: {icers['algo2']}")
+    print(f"Algorithm 3: {icers['algo3']}")
+
+
 
 #%% Run as a script
 if __name__ == '__main__':
@@ -159,6 +232,10 @@ if __name__ == '__main__':
     if 'run_scenarios' in to_run:
         scens = run_scens(verbose=0.1)
         sc.saveobj(f'{resfolder}/uc1_scens.obj', scens)
+
+    # Run cost-effectiveness analyses
+    if 'run_cea' in to_run:
+        run_cea()
 
     # Run scenarios
     if 'plot_scenarios' in to_run:
