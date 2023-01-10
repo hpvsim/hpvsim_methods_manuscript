@@ -199,7 +199,7 @@ def plot_fig4():
                   cin1shares,
                   cin2shares,
                   cin3shares,
-                  cancershares,
+                  cancershares
                   ]
 
     for gn, grade in enumerate(['No dysplasia', 'CIN1', 'CIN2', 'CIN3', 'Cancer']):

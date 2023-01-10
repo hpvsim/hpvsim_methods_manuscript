@@ -127,9 +127,6 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
         debut           = debut[setting],
         ms_agent_ratio  = 100,
         rand_seed       = seed,
-        beta=0.3,
-        rel_trans_cin2=0.5,
-        rel_trans_cin3=0.25
     )
 
     # Interventions
