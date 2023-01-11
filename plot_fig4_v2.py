@@ -19,24 +19,27 @@ def plot_fig4():
     genotypes = ['hpv16', 'hpv18', 'hrhpv']
     sim = hpv.Sim(genotypes=genotypes)
     sim.initialize()
+    sim['genotype_pars']['hpv16']['dur_precin']['par1'] = 13.9/12
+    sim['genotype_pars']['hpv16']['dysp_rate'] = 0.725
+    sim['genotype_pars']['hpv16']['prog_rate'] = 0.17
     sim['genotype_pars']['hpv16']['dur_dysp']['par1'] = 6
     sim['genotype_pars']['hpv16']['dur_dysp']['par2'] = 5
     sim['genotype_pars']['hpv16']['cancer_prob_growth_rate'] = 0.4
-    sim['genotype_pars']['hpv16']['cancer_prob_growth_rate_sd'] = 0.05
     sim['genotype_pars']['hpv16']['cancer_prob_growth_infl'] = 18
 
-    sim['genotype_pars']['hpv18']['dur_precin']['par1'] = .85
+    sim['genotype_pars']['hpv18']['dur_precin']['par1'] = 14.9/12
+    sim['genotype_pars']['hpv18']['dysp_rate'] = 0.805
+    sim['genotype_pars']['hpv18']['prog_rate'] = 0.23
     sim['genotype_pars']['hpv18']['dur_precin']['par2'] = 1
     sim['genotype_pars']['hpv18']['dur_dysp']['par1'] = 3
     sim['genotype_pars']['hpv18']['dur_dysp']['par2'] = 2
     sim['genotype_pars']['hpv18']['cancer_prob_growth_rate'] = 0.5
-    sim['genotype_pars']['hpv18']['cancer_prob_growth_rate_sd'] = 0.05
     sim['genotype_pars']['hpv18']['cancer_prob_growth_infl'] = 12
 
     sim['genotype_pars']['hrhpv']['dur_dysp']['par1'] = 7
     sim['genotype_pars']['hrhpv']['dur_dysp']['par2'] = 5
+    sim['genotype_pars']['hrhpv']['prog_rate'] = 0.09
     sim['genotype_pars']['hrhpv']['cancer_prob_growth_rate'] = 0.4
-    sim['genotype_pars']['hrhpv']['cancer_prob_growth_rate_sd'] = 0.05
     sim['genotype_pars']['hrhpv']['cancer_prob_growth_infl'] = 20
     # Get parameters
     ng = sim['n_genotypes']
@@ -100,43 +103,42 @@ def plot_fig4():
                                          genotype_pars[gtype]['dur_dysp']['par2'])
         rv = lognorm(sigma, 0, scale)
         ax['B'].plot(thisx, rv.pdf(thisx), color=colors[gi], lw=2, label=gtype.upper())
-        ax['E'].plot(thisx, ut.logf2(thisx, genotype_pars[gtype]['cancer_prob_growth_infl'], genotype_pars[gtype]['cancer_prob_growth_rate']), color=colors[gi], lw=2,
+        ax['D'].plot(thisx, ut.logf2(thisx, genotype_pars[gtype]['cancer_prob_growth_infl'], genotype_pars[gtype]['cancer_prob_growth_rate']), color=colors[gi], lw=2,
                        label=gtype.upper())
-        ax['D'].plot(thisx, ut.logf1(thisx, genotype_pars[gtype]['prog_rate']), color=colors[gi], lw=2,
+        ax['E'].plot(thisx, ut.logf1(thisx, genotype_pars[gtype]['prog_rate']), color=colors[gi], lw=2,
                        label=gtype.upper())
         for year in range(1, 26):
-            peaks = ut.logf2(year, genotype_pars[gtype]['cancer_prob_growth_infl'],
-                             hpu.sample(dist='normal', par1=genotype_pars[gtype]['cancer_prob_growth_rate'],
-                                        par2=genotype_pars[gtype]['cancer_prob_growth_rate_sd'], size=n_samples))
-            ax['E'].plot([year] * n_samples, peaks, color=colors[gi], lw=0, marker='o', alpha=0.5)
             peaks = ut.logf1(year, hpu.sample(dist='normal', par1=genotype_pars[gtype]['prog_rate'],
                                               par2=genotype_pars[gtype]['prog_rate_sd'], size=n_samples))
-            ax['D'].plot([year] * n_samples, peaks, color=colors[gi], lw=0, marker='o', alpha=0.5)
+            ax['E'].plot([year] * n_samples, peaks, color=colors[gi], lw=0, marker='o', alpha=0.5)
 
     ax['B'].set_ylabel("")
     # ax['C'].legend(fontsize=18)
     ax['B'].grid()
     ax['B'].set_ylabel("Density")
+    ax['C'].set_ylim([0, 1])
     ax['B'].set_xlabel("Duration of dysplasia prior to\nregression/cancer (years)")
 
     # Cancer outcome and severity
-    ax['E'].set_xlabel("Time spent with dysplasia (years)")
-    ax['E'].set_ylabel("Probability of cervical\ncancer invasion")
-    ax['E'].set_ylim([0, 1])
-    ax['D'].set_xlabel("Time spent with dysplasia (years)")
-    ax['D'].set_ylabel("Degree of dysplasia")
+    ax['D'].set_xlabel("Duration of dysplasia prior to\nregression/cancer (years)")
+    ax['D'].set_ylabel("Probability of cervical\ncancer invasion")
     ax['D'].set_ylim([0, 1])
-    ax['D'].axhline(y=0.33, ls=':', c='k')
-    ax['D'].axhline(y=0.67, ls=':', c='k')
-    ax['D'].axhspan(0, 0.33, color=cmap[0], alpha=.4)
-    ax['D'].axhspan(0.33, 0.67, color=cmap[1], alpha=.4)
-    ax['D'].axhspan(0.67, 1, color=cmap[2], alpha=.4)
-    ax['D'].text(-0.3, 0.08, 'CIN1', rotation=90)
-    ax['D'].text(-0.3, 0.4, 'CIN2', rotation=90)
-    ax['D'].text(-0.3, 0.73, 'CIN3', rotation=90)
+
+
+    ax['E'].set_xlabel("Time spent with dysplasia (years)")
+    ax['E'].set_ylabel("Degree of dysplasia")
+    ax['E'].set_ylim([0, 1])
+    ax['E'].axhline(y=0.33, ls=':', c='k')
+    ax['E'].axhline(y=0.67, ls=':', c='k')
+    ax['E'].axhspan(0, 0.33, color=cmap[0], alpha=.4)
+    ax['E'].axhspan(0.33, 0.67, color=cmap[1], alpha=.4)
+    ax['E'].axhspan(0.67, 1, color=cmap[2], alpha=.4)
+    ax['E'].text(-0.3, 0.08, 'CIN1', rotation=90)
+    ax['E'].text(-0.3, 0.4, 'CIN2', rotation=90)
+    ax['E'].text(-0.3, 0.73, 'CIN3', rotation=90)
 
     ####################
-    # Panel E
+    # Panel F
     ####################
 
     # This section calculates the overall share of outcomes for people infected with each genotype
