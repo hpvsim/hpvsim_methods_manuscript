@@ -23,10 +23,44 @@ debug = 0
 resfolder = 'results'
 figfolder = 'figures'
 to_run = [
-    # 'run_scenarios',
-    'run_cea',
+    'run_scenarios',
+    # 'run_cea',
     # 'plot_scenarios',
 ]
+
+
+#%% Define analyzer for computing DALYs
+class dalys(hpv.Analyzer):
+
+    def __init__(self, max_age=84, cancer=None, dysplasia=None, **kwargs):
+        super().__init__(**kwargs)
+        self.max_age = max_age
+        self.cancer = cancer if cancer else dict(dur=1, wt=0.16325) # From GBD 2017, calculated as 1 yr @ 0.288 (primary), 4 yrs @ 0.049 (maintenance), 0.5 yrs @ 0.451 (late), 0.5 yrs @ 0.54 (tertiary), scaled up to 12 years
+        return
+
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def apply(self, sim):
+        pass
+
+    def finalize(self, sim):
+
+        scale = sim['pop_scale']
+
+        # Years of life lost
+        dead = sim.people.dead_cancer
+        years_left = np.maximum(0, self.max_age - sim.people.age)
+        self.yll = (years_left*dead).sum()*scale
+        self.deaths = dead.sum()*scale
+
+        # Years lived with disability
+        cancer = sc.objdict(self.cancer)
+        n_cancer = (sim.people.cancerous).sum()*scale
+        self.n_cancer = n_cancer
+        self.yld = n_cancer*cancer.dur*cancer.wt
+        self.dalys = self.yll + self.yld
+        return
 
 
 #%% Define functions to run
@@ -43,7 +77,9 @@ def make_sim(seed=0):
         burnin          = [45,0][debug],
         rand_seed       = seed,
     )
-    sim = hpv.Sim(pars=pars)
+
+    sim = hpv.Sim(pars=pars, analyzers=dalys)
+
     return sim
 
 
@@ -146,7 +182,7 @@ def run_scens(sim=None, seed=0, n_seeds=3, meta=None, verbose=0, debug=debug):
         'algo2':    {'name': 'Algorithm 2', 'pars': {'interventions': algo2}},
         'algo3':    {'name': 'Algorithm 3', 'pars': {'interventions': algo3}},
     }
-    scens = hpv.Scenarios(sim=sim, metapars={'n_runs': 3}, scenarios=scenarios)
+    scens = hpv.Scenarios(sim=sim, metapars={'n_runs': n_seeds}, scenarios=scenarios)
     scens.run()
 
     return scens
