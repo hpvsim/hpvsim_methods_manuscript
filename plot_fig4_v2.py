@@ -19,38 +19,31 @@ def plot_fig4():
     genotypes = ['hpv16', 'hpv18', 'hrhpv']
     sim = hpv.Sim(genotypes=genotypes)
     sim.initialize()
-    sim['genotype_pars']['hpv16']['dysp_rate'] = 0.8
-    sim['genotype_pars']['hpv16']['dur_dysp']['par1'] = 7
+    sim['genotype_pars']['hpv16']['dur_dysp']['par1'] = 6
     sim['genotype_pars']['hpv16']['dur_dysp']['par2'] = 5
-    sim['genotype_pars']['hpv16']['cancer_prob'] = .0042
+    sim['genotype_pars']['hpv16']['cancer_prob_growth_rate'] = 0.4
+    sim['genotype_pars']['hpv16']['cancer_prob_growth_rate_sd'] = 0.05
+    sim['genotype_pars']['hpv16']['cancer_prob_growth_infl'] = 18
 
+    sim['genotype_pars']['hpv18']['dur_precin']['par1'] = .85
+    sim['genotype_pars']['hpv18']['dur_precin']['par2'] = 1
     sim['genotype_pars']['hpv18']['dur_dysp']['par1'] = 3
-    sim['genotype_pars']['hpv18']['dysp_rate'] = 0.9
-    sim['genotype_pars']['hpv18']['dur_dysp']['par2'] = 3
-    sim['genotype_pars']['hpv18']['cancer_prob'] = .007
+    sim['genotype_pars']['hpv18']['dur_dysp']['par2'] = 2
+    sim['genotype_pars']['hpv18']['cancer_prob_growth_rate'] = 0.5
+    sim['genotype_pars']['hpv18']['cancer_prob_growth_rate_sd'] = 0.05
+    sim['genotype_pars']['hpv18']['cancer_prob_growth_infl'] = 12
 
-    sim['genotype_pars']['hrhpv']['dur_dysp']['par1'] = 10
-    sim['genotype_pars']['hrhpv']['dysp_rate'] = 0.7
-    sim['genotype_pars']['hrhpv']['dur_dysp']['par2'] = 7
-    sim['genotype_pars']['hrhpv']['cancer_prob'] = 0.008
+    sim['genotype_pars']['hrhpv']['dur_dysp']['par1'] = 7
+    sim['genotype_pars']['hrhpv']['dur_dysp']['par2'] = 5
+    sim['genotype_pars']['hrhpv']['cancer_prob_growth_rate'] = 0.4
+    sim['genotype_pars']['hrhpv']['cancer_prob_growth_rate_sd'] = 0.05
+    sim['genotype_pars']['hrhpv']['cancer_prob_growth_infl'] = 20
     # Get parameters
     ng = sim['n_genotypes']
     genotype_map = sim['genotype_map']
 
     # Get parameters
     genotype_pars = sim['genotype_pars']
-
-    genotype_pars['hpv16']['growth_rate'] = 0.3
-    genotype_pars['hpv16']['growth_rate_sd'] = 0.05
-    genotype_pars['hpv16']['infl'] = 15
-
-    genotype_pars['hpv18']['growth_rate'] = 0.5
-    genotype_pars['hpv18']['growth_rate_sd'] = 0.05
-    genotype_pars['hpv18']['infl'] = 10
-
-    genotype_pars['hrhpv']['growth_rate'] = 0.4
-    genotype_pars['hrhpv']['growth_rate_sd'] = 0.05
-    genotype_pars['hrhpv']['infl'] = 20
 
     # Shorten duration names
     dur_precin = [genotype_pars[genotype_map[g]]['dur_precin'] for g in range(ng)]
@@ -107,12 +100,17 @@ def plot_fig4():
                                          genotype_pars[gtype]['dur_dysp']['par2'])
         rv = lognorm(sigma, 0, scale)
         ax['B'].plot(thisx, rv.pdf(thisx), color=colors[gi], lw=2, label=gtype.upper())
-        ax['D'].plot(thisx, ut.logf2(thisx, genotype_pars[gtype]['infl'], genotype_pars[gtype]['growth_rate']), color=colors[gi], lw=2,
+        ax['E'].plot(thisx, ut.logf2(thisx, genotype_pars[gtype]['cancer_prob_growth_infl'], genotype_pars[gtype]['cancer_prob_growth_rate']), color=colors[gi], lw=2,
+                       label=gtype.upper())
+        ax['D'].plot(thisx, ut.logf1(thisx, genotype_pars[gtype]['prog_rate']), color=colors[gi], lw=2,
                        label=gtype.upper())
         for year in range(1, 26):
-            peaks = ut.logf2(year, genotype_pars[gtype]['infl'],
-                             hpu.sample(dist='normal', par1=genotype_pars[gtype]['growth_rate'],
-                                        par2=genotype_pars[gtype]['growth_rate_sd'], size=n_samples))
+            peaks = ut.logf2(year, genotype_pars[gtype]['cancer_prob_growth_infl'],
+                             hpu.sample(dist='normal', par1=genotype_pars[gtype]['cancer_prob_growth_rate'],
+                                        par2=genotype_pars[gtype]['cancer_prob_growth_rate_sd'], size=n_samples))
+            ax['E'].plot([year] * n_samples, peaks, color=colors[gi], lw=0, marker='o', alpha=0.5)
+            peaks = ut.logf1(year, hpu.sample(dist='normal', par1=genotype_pars[gtype]['prog_rate'],
+                                              par2=genotype_pars[gtype]['prog_rate_sd'], size=n_samples))
             ax['D'].plot([year] * n_samples, peaks, color=colors[gi], lw=0, marker='o', alpha=0.5)
 
     ax['B'].set_ylabel("")
@@ -121,10 +119,21 @@ def plot_fig4():
     ax['B'].set_ylabel("Density")
     ax['B'].set_xlabel("Duration of dysplasia prior to\nregression/cancer (years)")
 
-    # Cancer probability
+    # Cancer outcome and severity
+    ax['E'].set_xlabel("Time spent with dysplasia (years)")
+    ax['E'].set_ylabel("Probability of cervical\ncancer invasion")
+    ax['E'].set_ylim([0, 1])
     ax['D'].set_xlabel("Time spent with dysplasia (years)")
-    ax['D'].set_ylabel("Cancer probability")
+    ax['D'].set_ylabel("Degree of dysplasia")
     ax['D'].set_ylim([0, 1])
+    ax['D'].axhline(y=0.33, ls=':', c='k')
+    ax['D'].axhline(y=0.67, ls=':', c='k')
+    ax['D'].axhspan(0, 0.33, color=cmap[0], alpha=.4)
+    ax['D'].axhspan(0.33, 0.67, color=cmap[1], alpha=.4)
+    ax['D'].axhspan(0.67, 1, color=cmap[2], alpha=.4)
+    ax['D'].text(-0.3, 0.08, 'CIN1', rotation=90)
+    ax['D'].text(-0.3, 0.4, 'CIN2', rotation=90)
+    ax['D'].text(-0.3, 0.73, 'CIN3', rotation=90)
 
     ####################
     # Panel E
@@ -155,7 +164,7 @@ def plot_fig4():
         peak_dysp = ut.logf1(longx, prog_rate[g]) # Calculate peak dysplasia
 
         # To start find women who advance to cancer
-        cancer_probs = ut.logf2(longx, genotype_pars[gtype]['infl'], genotype_pars[gtype]['growth_rate'])
+        cancer_probs = ut.logf2(longx, genotype_pars[gtype]['cancer_prob_growth_infl'], genotype_pars[gtype]['cancer_prob_growth_rate'])
         cancer_inds = hpu.true(hpu.n_binomial(cancer_probs, len(longx)))  # Use binomial probabilities to determine the indices of those who get cancer
 
         # Find women who only advance to CIN1
@@ -213,18 +222,18 @@ def plot_fig4():
         ydata = np.array(all_shares[gn])
         #if len(ydata.shape) > 1: ydata = ydata[:, 0]
         color = cmap[gn-1,:] if gn > 0 else 'gray'
-        ax['E'].bar(np.arange(1, ng + 1), ydata, color=color, bottom=bottom, label=grade)
+        ax['F'].bar(np.arange(1, ng + 1), ydata, color=color, bottom=bottom, label=grade)
         bottom = bottom + ydata
 
-    ax['E'].set_xticks(np.arange(1,ng + 1))
-    ax['E'].set_xticklabels(glabels)
-    ax['E'].set_ylabel("")
-    ax['E'].set_ylabel("Distribution of outcomes")
-    # ax['E'].legend(bbox_to_anchor=(1.1, 1))
-    handles, labels = ax['E'].get_legend_handles_labels()
+    ax['F'].set_xticks(np.arange(1,ng + 1))
+    ax['F'].set_xticklabels(glabels)
+    ax['F'].set_ylabel("")
+    ax['F'].set_ylabel("Distribution of outcomes")
+    ax['F'].legend(fontsize=20, frameon=True, loc='best')
+    handles, labels = ax['F'].get_legend_handles_labels()
 
-    ax['F'].set_axis_off()
-    ax['F'].legend(handles, labels, bbox_to_anchor=(0.5, 1), frameon=False)
+    # ax['F'].set_axis_off()
+    # ax['F'].legend(handles, labels, bbox_to_anchor=(0.5, 1), frameon=False)
 
     fs=40
     pl.figtext(0.06, 0.975, 'A', fontweight='bold', fontsize=fs)
@@ -232,6 +241,7 @@ def plot_fig4():
     pl.figtext(0.06, 0.62, 'B', fontweight='bold', fontsize=fs)
     pl.figtext(0.52, 0.62, 'D', fontweight='bold', fontsize=fs)
     pl.figtext(0.06, 0.3, 'E', fontweight='bold', fontsize=fs)
+    pl.figtext(0.52, 0.3, 'F', fontweight='bold', fontsize=fs)
 
     fig.tight_layout()
     pl.savefig(f"{ut.figfolder}/fig4_v2.png", dpi=100)

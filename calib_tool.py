@@ -142,21 +142,6 @@ def run_calib_tool():
         ms_agent_ratio=100,
     )
     sim.initialize()
-    sim['genotype_pars']['hpv16']['prog_rate'] = 0.09
-    # sim['genotype_pars']['hpv16']['dysp_rate'] = 0.8
-    sim['genotype_pars']['hpv16']['dur_dysp']['par1'] = 9
-    sim['genotype_pars']['hpv16']['dur_dysp']['par2'] = 5
-    sim['genotype_pars']['hpv16']['cancer_prob'] = .0014
-    #
-    # sim['genotype_pars']['hpv18']['dur_dysp']['par1'] = 3
-    # sim['genotype_pars']['hpv18']['dysp_rate'] = 0.9
-    # sim['genotype_pars']['hpv18']['dur_dysp']['par2'] = 3
-    sim['genotype_pars']['hpv18']['cancer_prob'] = .0009
-    #
-    sim['genotype_pars']['hrhpv']['dur_dysp']['par1'] = 10
-    # sim['genotype_pars']['hrhpv']['dysp_rate'] = 0.7
-    sim['genotype_pars']['hrhpv']['dur_dysp']['par2'] = 10
-    sim['genotype_pars']['hrhpv']['cancer_prob'] = 0.0052
 
     # Get parameters
     genotype_pars = sim['genotype_pars']
@@ -241,9 +226,14 @@ def run_calib_tool():
     data_cancers.plot(x='age', y='value', label='data', ax=ax[3,0])
     ax[3,0].set_xlabel('')
     ax[3,0].legend()
-    ax[2,1].plot(sim.res_yearvec[10:], sim.results['cancer_incidence'].values[10:], color=colors[8], label='Crude cancer incidence')
-    ax[2,1].plot(sim.res_yearvec[10:], sim.results['asr_cancer_incidence'].values[10:], color=colors[9], label='Age-standardized cancer incidence')
-    ax[2,1].legend()
+    cancer_prob_16 = 1 - (1- genotype_pars['hpv16']['cancer_prob'])**thisx
+    cancer_prob_18 = 1 - (1- genotype_pars['hpv18']['cancer_prob'])**thisx
+    cancer_prob_hr = 1 - (1- genotype_pars['hrhpv']['cancer_prob'])**thisx
+    ax[2,1].plot(thisx, cancer_prob_16, color=colors[0])
+    ax[2, 1].plot(thisx, cancer_prob_18, color=colors[1])
+    ax[2, 1].plot(thisx, cancer_prob_hr, color=colors[2])
+    ax[2, 1].set_ylabel("Cancer probability")
+    ax[2, 1].set_xlabel("Duration of dysplasia prior to\nregression/cancer (years)")
     ax[3,1].scatter(genotypes, sim.results['cancerous_genotype_dist'][:,-1], label='model')
     ax[3,1].scatter(genotypes, data_types['value'], label='data')
     ax[3,1].legend()

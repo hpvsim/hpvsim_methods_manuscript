@@ -95,6 +95,12 @@ def plot_fig4():
                                          genotype_pars[gtype]['dur_dysp']['par2'])
         rv = lognorm(sigma, 0, scale)
         ax['B'].plot(thisx, rv.pdf(thisx), color=colors[gi], lw=2, label=gtype.upper())
+        cancer_prob_16 = 1 - (1 - genotype_pars['hpv16']['cancer_prob']) ** thisx
+        cancer_prob_18 = 1 - (1 - genotype_pars['hpv18']['cancer_prob']) ** thisx
+        cancer_prob_hr = 1 - (1 - genotype_pars['hrhpv']['cancer_prob']) ** thisx
+        ax['E'].plot(thisx, cancer_prob_16, color=colors[0])
+        ax['E'].plot(thisx, cancer_prob_18, color=colors[1])
+        ax['E'].plot(thisx, cancer_prob_hr, color=colors[2])
         ax['D'].plot(thisx, ut.logf1(thisx, genotype_pars[gtype]['prog_rate']), color=colors[gi], lw=2,
                        label=gtype.upper())
         for year in range(1, 26):
@@ -108,7 +114,9 @@ def plot_fig4():
     ax['B'].set_ylabel("Density")
     ax['B'].set_xlabel("Duration of dysplasia prior to\nregression/cancer (years)")
 
-    # Severity
+    # Cancer outcome and severity
+    ax['E'].set_xlabel("Time spent with dysplasia (years)")
+    ax['E'].set_ylabel("Cancer probability")
     ax['D'].set_xlabel("Time spent with dysplasia (years)")
     ax['D'].set_ylabel("Clinical severity")
     ax['D'].set_ylim([0, 1])
@@ -123,7 +131,7 @@ def plot_fig4():
 
 
     ####################
-    # Panel E
+    # Panel F
     ####################
 
     # This section calculates the overall share of outcomes for people infected with each genotype
@@ -209,18 +217,18 @@ def plot_fig4():
         ydata = np.array(all_shares[gn])
         #if len(ydata.shape) > 1: ydata = ydata[:, 0]
         color = cmap[gn-1,:] if gn > 0 else 'gray'
-        ax['E'].bar(np.arange(1, ng + 1), ydata, color=color, bottom=bottom, label=grade)
+        ax['F'].bar(np.arange(1, ng + 1), ydata, color=color, bottom=bottom, label=grade)
         bottom = bottom + ydata
 
-    ax['E'].set_xticks(np.arange(1,ng + 1))
-    ax['E'].set_xticklabels(glabels)
-    ax['E'].set_ylabel("")
-    ax['E'].set_ylabel("Distribution of outcomes")
+    ax['F'].set_xticks(np.arange(1,ng + 1))
+    ax['F'].set_xticklabels(glabels)
+    ax['F'].set_ylabel("")
+    ax['F'].set_ylabel("Distribution of outcomes")
     # ax['E'].legend(bbox_to_anchor=(1.1, 1))
-    handles, labels = ax['E'].get_legend_handles_labels()
+    handles, labels = ax['F'].get_legend_handles_labels()
 
-    ax['F'].set_axis_off()
-    ax['F'].legend(handles, labels, bbox_to_anchor=(0.5, 1), frameon=False)
+    # ax['F'].set_axis_off()
+    # ax['F'].legend(handles, labels, bbox_to_anchor=(0.5, 1), frameon=False)
 
     fs=40
     pl.figtext(0.06, 0.975, 'A', fontweight='bold', fontsize=fs)
