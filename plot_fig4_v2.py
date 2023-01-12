@@ -19,28 +19,7 @@ def plot_fig4():
     genotypes = ['hpv16', 'hpv18', 'hrhpv']
     sim = hpv.Sim(genotypes=genotypes)
     sim.initialize()
-    sim['genotype_pars']['hpv16']['dur_precin']['par1'] = 13.9/12
-    sim['genotype_pars']['hpv16']['dysp_rate'] = 0.725
-    sim['genotype_pars']['hpv16']['prog_rate'] = 0.17
-    sim['genotype_pars']['hpv16']['dur_dysp']['par1'] = 6
-    sim['genotype_pars']['hpv16']['dur_dysp']['par2'] = 5
-    sim['genotype_pars']['hpv16']['cancer_prob_growth_rate'] = 0.4
-    sim['genotype_pars']['hpv16']['cancer_prob_growth_infl'] = 18
 
-    sim['genotype_pars']['hpv18']['dur_precin']['par1'] = 14.9/12
-    sim['genotype_pars']['hpv18']['dysp_rate'] = 0.805
-    sim['genotype_pars']['hpv18']['prog_rate'] = 0.23
-    sim['genotype_pars']['hpv18']['dur_precin']['par2'] = 1
-    sim['genotype_pars']['hpv18']['dur_dysp']['par1'] = 3
-    sim['genotype_pars']['hpv18']['dur_dysp']['par2'] = 2
-    sim['genotype_pars']['hpv18']['cancer_prob_growth_rate'] = 0.5
-    sim['genotype_pars']['hpv18']['cancer_prob_growth_infl'] = 12
-
-    sim['genotype_pars']['hrhpv']['dur_dysp']['par1'] = 7
-    sim['genotype_pars']['hrhpv']['dur_dysp']['par2'] = 5
-    sim['genotype_pars']['hrhpv']['prog_rate'] = 0.09
-    sim['genotype_pars']['hrhpv']['cancer_prob_growth_rate'] = 0.4
-    sim['genotype_pars']['hrhpv']['cancer_prob_growth_infl'] = 20
     # Get parameters
     ng = sim['n_genotypes']
     genotype_map = sim['genotype_map']
