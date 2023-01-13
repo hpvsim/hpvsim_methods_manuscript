@@ -232,7 +232,7 @@ def make_msims(sims, use_mean=True):
     return msim
 
 
-def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug, exposure_years=None):
+def run_scens(settings=None, vx_scens=None, n_seeds=20, verbose=0, debug=debug, exposure_years=None):
     ''' Run scenarios for all specified settings '''
 
     # Set up iteration arguments
