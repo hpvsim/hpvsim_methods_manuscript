@@ -298,12 +298,12 @@ def run_scens(sim=None, seed=0, n_seeds=3, meta=None, verbose=0, debug=debug):
     )
 
     # Triage ASCUS with HPV test
-    ascus = lambda sim: sim.get_intervention('cytology').outcomes['ascus']
+    to_colpo = lambda sim: list(set(sim.get_intervention('cytology').outcomes['ascus'].tolist() + sim.get_intervention('cytology').outcomes['abnormal'].tolist()))
     colpo_triage = hpv.routine_triage(
         product='colposcopy',
         prob=triage_screen_prob,
         annual_prob=False,
-        eligibility=ascus,
+        eligibility=to_colpo,
         label='colposcopy'
     )
 
