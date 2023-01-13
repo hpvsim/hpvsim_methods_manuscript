@@ -38,8 +38,8 @@ to_run = [
     # 'run_sims',
     # 'plot_mixing',
     # 'plot_sims',
-    # 'run_scenarios',
-    'plot_scenarios',
+    'run_scenarios',
+    # 'plot_scenarios',
 ]
 
 #%% Define parameters
@@ -121,7 +121,7 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
     # Parameters
     pars = dict(
         n_agents        = [50e3,5e3][debug],
-        dt              = [0.5,1.0][debug],
+        dt              = [0.25,1.0][debug],
         start           = [1950,2000][debug],
         end             = 2060,
         debut           = debut[setting],
