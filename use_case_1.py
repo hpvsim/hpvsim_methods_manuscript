@@ -22,9 +22,9 @@ debug = 0
 resfolder = 'results'
 figfolder = 'figures'
 to_run = [
-    'run_scenarios',
+    # 'run_scenarios',
     # 'run_cea',
-    # 'plot_scenarios',
+    'plot_scenarios',
 ]
 
 
@@ -346,12 +346,14 @@ def run_cea():
     s1 = scens.sims[1][0] # algo1
     s2 = scens.sims[2][0] # algo2
     s3 = scens.sims[3][0] # algo3
-    s5 = scens.sims[4][0] # algo4
+    s4 = scens.sims[4][0] # algo4
+    s5 = scens.sims[5][0] # algo5
+    s6 = scens.sims[6][0] # algo6
+    s7 = scens.sims[7][0] # algo7
     si = sc.findinds(s2.res_yearvec, 2025)[0]
-    pop_scale = 1250 # Approximate number of people represented by each agent - assumes pop size of 62.5m in 1975
 
     dalys = {}
-    for sim, scen in zip([s0, s1, s2, s3, s5],['baseline', 'algo1', 'algo2', 'algo3', 'algo5']):
+    for sim, scen in zip([s0, s1, s2, s3, s4, s5, s6, s7],['baseline', 'algo1', 'algo2', 'algo3', 'algo4', 'algo5', 'algo6', 'algo7']):
         a = sim.get_analyzers()[0]
         df = a.df
         discounted_cancers = np.array([i / 1.03 ** t for t, i in enumerate(df['new_cancers'].values)])
@@ -380,25 +382,38 @@ def run_cea():
             'colposcopy':   s3.get_intervention('colposcopy').n_products_used[si:],#*pop_scale,
             'ablation':     s3.get_intervention('ablation').n_products_used[si:],#*pop_scale,
         },
+        'algo4': {
+            'hpv genotype primary': s4.get_intervention('hpv genotype primary').n_products_used[si:],  # * pop_scale,
+            'via triage': s4.get_intervention('via triage').n_products_used[si:],  # * pop_scale,
+            'ablation': s4.get_intervention('ablation').n_products_used[si:],  # * pop_scale,
+        },
         'algo5': {
             'hpv primary': s5.get_intervention('hpv primary').n_products_used[si:],# * pop_scale,
             'via triage': s5.get_intervention('via triage').n_products_used[si:],# * pop_scale,
             'ablation': s5.get_intervention('ablation').n_products_used[si:],# * pop_scale,
         },
+        'algo6': {
+            'hpv primary': s6.get_intervention('hpv primary').n_products_used[si:],  # * pop_scale,
+            'colposcopy': s6.get_intervention('colposcopy').n_products_used[si:],  # * pop_scale,
+            'ablation': s6.get_intervention('ablation').n_products_used[si:],  # * pop_scale,
+        },
+        'algo7': {
+            'hpv primary': s7.get_intervention('hpv primary').n_products_used[si:],  # * pop_scale,
+            'cytology': s7.get_intervention('cytology').n_products_used[si:],
+            'colposcopy': s7.get_intervention('colposcopy').n_products_used[si:],  # * pop_scale,
+            'ablation': s7.get_intervention('ablation').n_products_used[si:],  # * pop_scale,
+        },
     }
 
     # Total products
     total_products = {}
-    for algo in ['algo1', 'algo2', 'algo3', 'algo5']:
+    for algo in ['algo1', 'algo2', 'algo3', 'algo4', 'algo5', 'algo6', 'algo7']:
         total_products[algo] = {}
         for product_name, products_used in products[algo].items():
             total_products[algo][product_name] = sum(products_used)
 
     # Create a hypothetical dataframe of costs
-    screen_cost = 1
-    treat_cost = 1*4
-    costs_threshold = {'hpv primary': screen_cost, 'cytology': screen_cost, 'hpv triage': screen_cost, 'colposcopy': screen_cost, 'ablation': treat_cost}
-    costs = {'hpv primary': 10, 'cytology': 12.5, 'hpv triage': 10, 'colposcopy': 25, 'ablation': 50,
+    costs = {'hpv primary': 10, 'cytology': 20, 'hpv triage': 10, 'colposcopy': 15, 'ablation': 30, 'hpv genotype primary': 30,
              'via primary': 2, 'via triage': 2}
 
     # Dicsounted costs
@@ -411,7 +426,7 @@ def run_cea():
     # Calculate the total cost of each
     total_costs = {}
     total_ablations = {}
-    for algo in ['baseline', 'algo1', 'algo2', 'algo3', 'algo5']:
+    for algo in ['baseline', 'algo1', 'algo2', 'algo3', 'algo4', 'algo5', 'algo6', 'algo7']:
         total_costs[algo] = 0
         if algo != 'baseline':
             for product_name, products_used in products[algo].items():
@@ -424,7 +439,10 @@ def run_cea():
         'algo1': sum((s0.results.cancers[si:] - s1.results.cancers[si:]) ),
         'algo2': sum((s0.results.cancers[si:] - s2.results.cancers[si:]) ),
         'algo3': sum((s0.results.cancers[si:] - s3.results.cancers[si:]) ),
+        'algo4': sum((s0.results.cancers[si:] - s4.results.cancers[si:])),
         'algo5': sum((s0.results.cancers[si:] - s5.results.cancers[si:]) ),
+        'algo6': sum((s0.results.cancers[si:] - s6.results.cancers[si:])),
+        'algo7': sum((s0.results.cancers[si:] - s7.results.cancers[si:])),
     }
 
     # ICERs
@@ -432,7 +450,10 @@ def run_cea():
         'algo1': total_costs['algo1'] / (dalys['baseline'] - dalys['algo1']),
         'algo2': total_costs['algo2'] / (dalys['baseline'] - dalys['algo2']),
         'algo3': total_costs['algo3'] / (dalys['baseline'] - dalys['algo3']),
+        'algo4': total_costs['algo4'] / (dalys['baseline'] - dalys['algo4']),
         'algo5': total_costs['algo5'] / (dalys['baseline'] - dalys['algo5']),
+        'algo6': total_costs['algo6'] / (dalys['baseline'] - dalys['algo6']),
+        'algo7': total_costs['algo7'] / (dalys['baseline'] - dalys['algo7']),
     }
 
     total_df = pd.DataFrame(columns=['Scenario', 'DALYs', 'Costs'])
@@ -488,7 +509,10 @@ def run_cea():
         'algo1': 'Algorithm 1',
         'algo2': 'Algorithm 2',
         'algo3': 'Algorithm 3',
+        'algo4': 'Algorithm 4',
         'algo5': 'Algorithm 5',
+        'algo6': 'Algorithm 6',
+        'algo7': 'Algorithm 7',
     }
     ut.set_font(size=20)
     f, ax = pl.subplots(figsize=(10, 10))
@@ -497,7 +521,7 @@ def run_cea():
     efficiency_data.plot(ax=ax, kind='line', x='DALYs averted', y='Costs', color='black',
                          label='Efficiency frontier')
 
-    for i, scen in enumerate(['algo1', 'algo2', 'algo3', 'algo5']):
+    for i, scen in enumerate(['algo1', 'algo2', 'algo3', 'algo4', 'algo5', 'algo6', 'algo7']):
         group = data_to_plot[data_to_plot['Scenario'] == scen]
         group.plot(ax=ax, kind='scatter', x='DALYs averted', y='Costs', label=scen_labels[scen],
                    color=colors[i], s=200)
