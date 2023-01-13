@@ -19,6 +19,8 @@ def plot_fig4():
     genotypes = ['hpv16', 'hpv18', 'hrhpv']
     sim = hpv.Sim(genotypes=genotypes)
     sim.initialize()
+    sim['genotype_pars']['hpv16']['prog_rate'] = 0.3
+    sim['genotype_pars']['hpv18']['prog_rate'] = 0.4
 
     # Get parameters
     ng = sim['n_genotypes']
