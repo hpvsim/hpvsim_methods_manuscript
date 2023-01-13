@@ -22,8 +22,8 @@ debug = 0
 resfolder = 'results'
 figfolder = 'figures'
 to_run = [
-    'run_scenarios',
-    # 'run_cea',
+    # 'run_scenarios',
+    'run_cea',
     # 'plot_scenarios',
 ]
 
@@ -165,6 +165,41 @@ def run_scens(sim=None, seed=0, n_seeds=3, meta=None, verbose=0, debug=debug):
     for intv in algo3: intv.do_plot=False
 
     ####################################################################
+    #### Algorithm 4 (https://www.ncbi.nlm.nih.gov/books/NBK572308/)
+    # HPV genotype, triage oHR results with VIA, ablate all HPV 16/18+
+    ####################################################################
+
+    screen_eligible = lambda sim: np.isnan(sim.people.date_screened) | (sim.t > (sim.people.date_screened + 5 / sim['dt']))
+    hpv_geno_primary = hpv.routine_screening(
+        product='hpv_type',
+        prob=primary_screen_prob,
+        eligibility=screen_eligible,
+        start_year=start_year,
+        label='hpv genotype primary',
+    )
+
+    # Send abnormal cytology results, plus ASCUS results that were HPV+, for colpo
+    to_via = lambda sim: sim.get_intervention('hpv genotype primary').outcomes['positive_ohr']
+    via_triage = hpv.routine_triage(
+        product='via',
+        prob = triage_screen_prob,
+        annual_prob=False,
+        eligibility=to_via,
+        label = 'via triage'
+    )
+
+    # Triage ASCUS with HPV test
+    to_ablate = lambda sim: list(set(sim.get_intervention('hpv genotype primary').outcomes['positive_1618'].tolist() + sim.get_intervention('via triage').outcomes['positive'].tolist()))
+    ablation4 = hpv.treat_num(
+        prob = ablate_prob,
+        product = 'ablation',
+        eligibility = to_ablate,
+        label = 'ablation'
+    )
+    algo4 = [hpv_geno_primary, via_triage, ablation4]
+    for intv in algo4: intv.do_plot=False
+
+    ####################################################################
     #### Algorithm 5 (https://www.ncbi.nlm.nih.gov/books/NBK572308/)
     # HPV testing, then VIA triage
     ####################################################################
@@ -198,15 +233,104 @@ def run_scens(sim=None, seed=0, n_seeds=3, meta=None, verbose=0, debug=debug):
 
     algo5 = [hpv_primary, via_triage, ablation5]
     for intv in algo5: intv.do_plot = False
+
     ####################################################################
-    #### Set up scenarios to compare algoriths 2 & 3
+    #### Algorithm 6 (https://www.ncbi.nlm.nih.gov/books/NBK572308/)
+    # HPV DNA testing, triage HPV+ with colposcopy/biopsy, then ablation for all
+    # HSILs
+    ####################################################################
+
+    screen_eligible = lambda sim: np.isnan(sim.people.date_screened) | (sim.t > (sim.people.date_screened + 5 / sim['dt']))
+    hpv_primary = hpv.routine_screening(
+        product='hpv',
+        prob=primary_screen_prob,
+        eligibility=screen_eligible,
+        start_year=start_year,
+        label='hpv primary',
+    )
+
+    # Triage HPV+ with Colposcopy
+    to_colpo = lambda sim: sim.get_intervention('hpv primary').outcomes['positive']
+    colpo_triage = hpv.routine_triage(
+        product='colposcopy',
+        prob=triage_screen_prob,
+        annual_prob=False,
+        eligibility=to_colpo,
+        label='colposcopy'
+    )
+
+    # After colpo, treat HSILs with ablation
+    hsils = lambda sim: sim.get_intervention('colposcopy').outcomes['hsil']
+    ablation6 = hpv.treat_num(
+        prob = ablate_prob,
+        product = 'ablation',
+        eligibility = hsils,
+        label = 'ablation'
+    )
+
+    algo6 = [hpv_primary, colpo_triage, ablation6]
+    for intv in algo6: intv.do_plot=False
+
+    ####################################################################
+    #### Algorithm 7 (https://www.ncbi.nlm.nih.gov/books/NBK572308/)
+    # HPV DNA testing, triage HPV+ with cytology, colposcopy/biopsy for ASCUS+, then ablation for all
+    # HSILs
+    ####################################################################
+
+    screen_eligible = lambda sim: np.isnan(sim.people.date_screened) | (
+                sim.t > (sim.people.date_screened + 5 / sim['dt']))
+    hpv_primary = hpv.routine_screening(
+        product='hpv',
+        prob=primary_screen_prob,
+        eligibility=screen_eligible,
+        start_year=start_year,
+        label='hpv primary',
+    )
+
+    # Triage HPV+ with cytology
+    to_cyto = lambda sim: sim.get_intervention('hpv primary').outcomes['positive']
+    cytology = hpv.routine_triage(
+        product='lbc',
+        prob=primary_screen_prob,
+        eligibility=to_cyto,
+        start_year=start_year,
+        label='cytology',
+    )
+
+    # Triage ASCUS with HPV test
+    ascus = lambda sim: sim.get_intervention('cytology').outcomes['ascus']
+    colpo_triage = hpv.routine_triage(
+        product='colposcopy',
+        prob=triage_screen_prob,
+        annual_prob=False,
+        eligibility=ascus,
+        label='colposcopy'
+    )
+
+    # After colpo, treat HSILs with ablation
+    hsils = lambda sim: sim.get_intervention('colposcopy').outcomes['hsil']
+    ablation7 = hpv.treat_num(
+        prob=ablate_prob,
+        product='ablation',
+        eligibility=hsils,
+        label='ablation'
+    )
+
+    algo7 = [hpv_primary, cytology, colpo_triage, ablation7]
+    for intv in algo7: intv.do_plot = False
+
+    ####################################################################
+    #### Set up scenarios to compare algoriths 1-7
     ####################################################################
     scenarios = {
         'baseline': {'name': 'No screening','pars': {}},
         'algo1':    {'name': 'Algorithm 1', 'pars': {'interventions': algo1}},
         'algo2':    {'name': 'Algorithm 2', 'pars': {'interventions': algo2}},
         'algo3':    {'name': 'Algorithm 3', 'pars': {'interventions': algo3}},
+        'algo4':    {'name': 'Algorithm 4', 'pars': {'interventions': algo4}},
         'algo5':    {'name': 'Algorithm 5', 'pars': {'interventions': algo5}},
+        'algo6':    {'name': 'Algorithm 6', 'pars': {'interventions': algo6}},
+        'algo7':    {'name': 'Algorithm 7', 'pars': {'interventions': algo7}},
     }
     scens = hpv.Scenarios(sim=sim, metapars={'n_runs': n_seeds}, scenarios=scenarios)
     scens.run()
@@ -229,30 +353,38 @@ def run_cea():
     dalys = {}
     for sim, scen in zip([s0, s1, s2, s3, s5],['baseline', 'algo1', 'algo2', 'algo3', 'algo5']):
         a = sim.get_analyzers()[0]
-        dalys[scen] = a.dalys
+        df = a.df
+        discounted_cancers = np.array([i / 1.03 ** t for t, i in enumerate(df['new_cancers'].values)])
+        discounted_cancer_deaths = np.array([i / 1.03 ** t for t, i in enumerate(df['new_cancer_deaths'].values)])
+        avg_age_ca_death = np.mean(df['av_age_cancer_deaths'])
+        avg_age_ca = np.mean(df['av_age_cancers'])
+        ca_years = avg_age_ca_death - avg_age_ca
+        yld = np.sum(0.4 * ca_years * discounted_cancers)
+        yll = np.sum((84 - avg_age_ca_death) * discounted_cancer_deaths)
+        daly = yll + yld
+        dalys[scen] = daly
 
 
     products = {
         'algo1': {
-            'via primary': s1.get_intervention('via primary').n_products_used[si:] * pop_scale,
-            'ablation': s1.get_intervention('ablation').n_products_used[si:] * pop_scale,
+            'via primary': s1.get_intervention('via primary').n_products_used[si:],# * pop_scale,
+            'ablation': s1.get_intervention('ablation').n_products_used[si:],# * pop_scale,
         },
         'algo2': {
-            'hpv primary':  s2.get_intervention('hpv primary').n_products_used[si:]*pop_scale,
-            'ablation':     s2.get_intervention('ablation').n_products_used[si:]*pop_scale,
+            'hpv primary':  s2.get_intervention('hpv primary').n_products_used[si:],#*pop_scale,
+            'ablation':     s2.get_intervention('ablation').n_products_used[si:],#*pop_scale,
         },
         'algo3': {
-            'cytology':     s3.get_intervention('cytology').n_products_used[si:]*pop_scale,
-            'hpv triage':   s3.get_intervention('hpv triage').n_products_used[si:]*pop_scale,
-            'colposcopy':   s3.get_intervention('colposcopy').n_products_used[si:]*pop_scale,
-            'ablation':     s3.get_intervention('ablation').n_products_used[si:]*pop_scale,
+            'cytology':     s3.get_intervention('cytology').n_products_used[si:],#*pop_scale,
+            'hpv triage':   s3.get_intervention('hpv triage').n_products_used[si:],#*pop_scale,
+            'colposcopy':   s3.get_intervention('colposcopy').n_products_used[si:],#*pop_scale,
+            'ablation':     s3.get_intervention('ablation').n_products_used[si:],#*pop_scale,
         },
         'algo5': {
-            'hpv primary': s5.get_intervention('hpv primary').n_products_used[si:] * pop_scale,
-            'via triage': s5.get_intervention('via triage').n_products_used[si:] * pop_scale,
-            'ablation': s5.get_intervention('ablation').n_products_used[si:] * pop_scale,
+            'hpv primary': s5.get_intervention('hpv primary').n_products_used[si:],# * pop_scale,
+            'via triage': s5.get_intervention('via triage').n_products_used[si:],# * pop_scale,
+            'ablation': s5.get_intervention('ablation').n_products_used[si:],# * pop_scale,
         },
-
     }
 
     # Total products
@@ -279,55 +411,123 @@ def run_cea():
     # Calculate the total cost of each
     total_costs = {}
     total_ablations = {}
-    for algo in ['algo1', 'algo2', 'algo3', 'algo5']:
-        total_costs[algo] = {}
-        total_costs[algo]['total'] = 0
-        for product_name, products_used in products[algo].items():
-            total_costs[algo][product_name] = sum(discounted_costs[product_name] * products[algo][product_name])
-            total_costs[algo]['total'] += total_costs[algo][product_name]
-            if product_name == 'ablation':
-                total_ablations[algo] = sum(products[algo][product_name])
+    for algo in ['baseline', 'algo1', 'algo2', 'algo3', 'algo5']:
+        total_costs[algo] = 0
+        if algo != 'baseline':
+            for product_name, products_used in products[algo].items():
+                total_costs[algo] += sum(discounted_costs[product_name] * products[algo][product_name])
+                if product_name == 'ablation':
+                    total_ablations[algo] = sum(products[algo][product_name])
 
     # Impact
-    impact = {
+    cancer_redux = {
         'algo1': sum((s0.results.cancers[si:] - s1.results.cancers[si:]) ),
         'algo2': sum((s0.results.cancers[si:] - s2.results.cancers[si:]) ),
         'algo3': sum((s0.results.cancers[si:] - s3.results.cancers[si:]) ),
         'algo5': sum((s0.results.cancers[si:] - s5.results.cancers[si:]) ),
     }
-    discounted_impact = {
-        'algo1': sum((s0.results.cancers[si:] - s1.results.cancers[si:]) / (1 + dr) ** np.arange(len_t)),
-        'algo2': sum((s0.results.cancers[si:] - s2.results.cancers[si:])/(1 + dr) ** np.arange(len_t)),
-        'algo3': sum((s0.results.cancers[si:] - s3.results.cancers[si:]) / (1 + dr) ** np.arange(len_t)),
-        'algo5': sum((s0.results.cancers[si:] - s5.results.cancers[si:]) / (1 + dr) ** np.arange(len_t)),
-    }
 
     # ICERs
     icers = {
-        'algo1': total_costs['algo1']['total'] / discounted_impact['algo1'],
-        'algo2': total_costs['algo2']['total'] / discounted_impact['algo2'],
-        'algo3': total_costs['algo3']['total'] / discounted_impact['algo3'],
-        'algo5': total_costs['algo5']['total'] / discounted_impact['algo5'],
+        'algo1': total_costs['algo1'] / (dalys['baseline'] - dalys['algo1']),
+        'algo2': total_costs['algo2'] / (dalys['baseline'] - dalys['algo2']),
+        'algo3': total_costs['algo3'] / (dalys['baseline'] - dalys['algo3']),
+        'algo5': total_costs['algo5'] / (dalys['baseline'] - dalys['algo5']),
     }
 
+    total_df = pd.DataFrame(columns=['Scenario', 'DALYs', 'Costs'])
+    total_df['Scenario'] = dalys.keys()
+    total_df['DALYs'] = dalys.values()
+    total_df['Costs'] = total_costs.values()
+
+    base_DALYs = total_df.iloc[0]['DALYs']
+    total_df['DALYs averted'] = base_DALYs - total_df['DALYs']
+
+    data_to_plot = total_df[total_df['Scenario'] != 'baseline']
+    efficiency_data = data_to_plot.copy().sort_values('Costs').reset_index(drop=True)
+    efficient_scenarios = efficiency_data['Scenario'].values
+    num_scens = len(efficient_scenarios)-1
+    icers = sc.autolist()
+    icers += 0
+    i = 1
+    while i <= num_scens:
+        inc_DALYs = efficiency_data.iloc[i]['DALYs averted'] - efficiency_data.iloc[i - 1]['DALYs averted']
+        inc_cost = efficiency_data.iloc[i]['Costs'] - efficiency_data.iloc[i - 1]['Costs']
+        if inc_DALYs < 0: # if it averts negative DALYs it is dominated by definition
+            efficiency_data = efficiency_data.drop(i).reset_index(drop=True)
+            efficient_scenarios = np.delete(efficient_scenarios, i)
+            num_scens -=1
+        else:
+            icer = inc_cost / inc_DALYs
+            extended_dominance_check = True
+            while extended_dominance_check:
+                if icer < icers[i - 1]:
+                    efficiency_data = efficiency_data.drop(i - 1).reset_index(drop=True)
+                    efficient_scenarios = np.delete(efficient_scenarios, i - 1)
+                    num_scens -= 1
+                    icers = np.delete(icers, i - 1)
+                    i -= 1
+                    inc_DALYs = efficiency_data.iloc[i]['DALYs averted'] - efficiency_data.iloc[i - 1]['DALYs averted']
+                    inc_cost = efficiency_data.iloc[i]['Costs'] - efficiency_data.iloc[i - 1]['Costs']
+                    if inc_DALYs < 0:
+                        efficiency_data = efficiency_data.drop(i).reset_index(drop=True)
+                        efficient_scenarios = np.delete(efficient_scenarios, i)
+                        num_scens -= 1
+                        i -= 1
+                        extended_dominance_check = False
+                    else:
+                        icer = inc_cost / inc_DALYs
+                        icers = np.append(icers,icer)
+                else:
+                    if icer not in icers:
+                        icers = np.append(icers,icer)
+                    i += 1
+                    extended_dominance_check = False
+
+    scen_labels = {
+        'algo1': 'Algorithm 1',
+        'algo2': 'Algorithm 2',
+        'algo3': 'Algorithm 3',
+        'algo5': 'Algorithm 5',
+    }
+    ut.set_font(size=20)
+    f, ax = pl.subplots(figsize=(10, 10))
+
+    colors = sc.gridcolors(10)
+    efficiency_data.plot(ax=ax, kind='line', x='DALYs averted', y='Costs', color='black',
+                         label='Efficiency frontier')
+
+    for i, scen in enumerate(['algo1', 'algo2', 'algo3', 'algo5']):
+        group = data_to_plot[data_to_plot['Scenario'] == scen]
+        group.plot(ax=ax, kind='scatter', x='DALYs averted', y='Costs', label=scen_labels[scen],
+                   color=colors[i], s=200)
+
+    ax.set_xlabel('DALYs averted, 2020-2060')
+    ax.set_ylabel('Total costs, $USD 2020-2060')
+    ax.legend(fancybox=True)  # , title='Screening method')
+    sc.SIticks(ax)
+    f.tight_layout()
+    fig_name = f'{figfolder}/ICER.png'
+    sc.savefig(fig_name, dpi=100)
+
     # Print results
-    print("Total costs are:")
-    print(f"Algorithm 1: {total_costs['algo1']['total']}")
-    print(f"Algorithm 2: {total_costs['algo2']['total']}")
-    print(f"Algorithm 3: {total_costs['algo3']['total']}")
-    print(f"Algorithm 5: {total_costs['algo5']['total']}")
-
-    print("Cost per cancers averted")
-    print(f"Algorithm 1: {icers['algo1']}")
-    print(f"Algorithm 2: {icers['algo2']}")
-    print(f"Algorithm 3: {icers['algo3']}")
-    print(f"Algorithm 5: {icers['algo5']}")
-
-    print("NNTs:")
-    print(f"Algorithm 1: {total_ablations['algo1']/impact['algo1']}")
-    print(f"Algorithm 2: {total_ablations['algo2']/impact['algo2']}")
-    print(f"Algorithm 3: {total_ablations['algo3']/impact['algo3']}")
-    print(f"Algorithm 5: {total_ablations['algo5']/impact['algo5']}")
+    # print("Total costs are:")
+    # print(f"Algorithm 1: {total_costs['algo1']}")
+    # print(f"Algorithm 2: {total_costs['algo2']}")
+    # print(f"Algorithm 3: {total_costs['algo3']}")
+    # print(f"Algorithm 5: {total_costs['algo5']}")
+    #
+    # print("Cost per DALY averted")
+    # print(f"Algorithm 1: {icers['algo1']}")
+    # print(f"Algorithm 2: {icers['algo2']}")
+    # print(f"Algorithm 3: {icers['algo3']}")
+    # print(f"Algorithm 5: {icers['algo5']}")
+    #
+    # print("NNTs:")
+    # print(f"Algorithm 1: {total_ablations['algo1']/cancer_redux['algo1']}")
+    # print(f"Algorithm 2: {total_ablations['algo2']/cancer_redux['algo2']}")
+    # print(f"Algorithm 3: {total_ablations['algo3']/cancer_redux['algo3']}")
+    # print(f"Algorithm 5: {total_ablations['algo5']/cancer_redux['algo5']}")
 
 
 #%% Run as a script
