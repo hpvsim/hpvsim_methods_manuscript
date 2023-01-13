@@ -14,11 +14,11 @@ import matplotlib as mpl
 
 # Imports from this repository
 import utils as ut
-
+from analyzers import dalys
 
 
 #%% Run configurations
-debug = 0
+debug = 1
 resfolder = 'results'
 figfolder = 'figures'
 to_run = [
@@ -26,40 +26,6 @@ to_run = [
     # 'run_cea',
     # 'plot_scenarios',
 ]
-
-
-#%% Define analyzer for computing DALYs
-class dalys(hpv.Analyzer):
-
-    def __init__(self, max_age=84, cancer=None, **kwargs):
-        super().__init__(**kwargs)
-        self.max_age = max_age
-        self.cancer = cancer if cancer else dict(dur=1, wt=0.16325) # From GBD 2017, calculated as 1 yr @ 0.288 (primary), 4 yrs @ 0.049 (maintenance), 0.5 yrs @ 0.451 (late), 0.5 yrs @ 0.54 (tertiary), scaled up to 12 years
-        return
-
-    def __getitem__(self, key):
-        return getattr(self, key)
-
-    def apply(self, sim):
-        pass
-
-    def finalize(self, sim):
-
-        scale = sim['pop_scale']
-
-        # Years of life lost
-        dead = sim.people.dead_cancer
-        years_left = np.maximum(0, self.max_age - sim.people.age)
-        self.yll = (years_left*dead).sum()*scale
-        self.deaths = dead.sum()*scale
-
-        # Years lived with disability
-        cancer = sc.objdict(self.cancer)
-        n_cancer = (sim.people.cancerous).sum()*scale
-        self.n_cancer = n_cancer
-        self.yld = n_cancer*cancer.dur*cancer.wt
-        self.dalys = self.yll + self.yld
-        return
 
 
 #%% Define functions to run
@@ -260,6 +226,12 @@ def run_cea():
     si = sc.findinds(s2.res_yearvec, 2025)[0]
     pop_scale = 1250 # Approximate number of people represented by each agent - assumes pop size of 62.5m in 1975
 
+    # dalys = {}
+    # for sim, scen in zip([s0, s1, s2, s3, s5],['baseline', 'algo1', 'algo2', 'algo3', 'algo5']):
+    #     a = sim.get_analyzers()[0]
+    #     dalys[scen] = a.dalys
+
+
     products = {
         'algo1': {
             'via primary': s1.get_intervention('via primary').n_products_used[si:] * pop_scale,
@@ -306,14 +278,23 @@ def run_cea():
 
     # Calculate the total cost of each
     total_costs = {}
+    total_ablations = {}
     for algo in ['algo1', 'algo2', 'algo3', 'algo5']:
         total_costs[algo] = {}
         total_costs[algo]['total'] = 0
         for product_name, products_used in products[algo].items():
             total_costs[algo][product_name] = sum(discounted_costs[product_name] * products[algo][product_name])
             total_costs[algo]['total'] += total_costs[algo][product_name]
+            if product_name == 'ablation':
+                total_ablations[algo] = sum(products[algo][product_name])
 
     # Impact
+    impact = {
+        'algo1': sum((s0.results.cancers[si:] - s1.results.cancers[si:]) ),
+        'algo2': sum((s0.results.cancers[si:] - s2.results.cancers[si:]) ),
+        'algo3': sum((s0.results.cancers[si:] - s3.results.cancers[si:]) ),
+        'algo5': sum((s0.results.cancers[si:] - s5.results.cancers[si:]) ),
+    }
     discounted_impact = {
         'algo1': sum((s0.results.cancers[si:] - s1.results.cancers[si:]) / (1 + dr) ** np.arange(len_t)),
         'algo2': sum((s0.results.cancers[si:] - s2.results.cancers[si:])/(1 + dr) ** np.arange(len_t)),
@@ -341,6 +322,13 @@ def run_cea():
     print(f"Algorithm 2: {icers['algo2']}")
     print(f"Algorithm 3: {icers['algo3']}")
     print(f"Algorithm 5: {icers['algo5']}")
+
+    print("NNTs:")
+    print(f"Algorithm 1: {total_ablations['algo1']/impact['algo1']}")
+    print(f"Algorithm 2: {total_ablations['algo2']/impact['algo2']}")
+    print(f"Algorithm 3: {total_ablations['algo3']/impact['algo3']}")
+    print(f"Algorithm 5: {total_ablations['algo5']/impact['algo5']}")
+
 
 #%% Run as a script
 if __name__ == '__main__':
