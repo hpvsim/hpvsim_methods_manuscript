@@ -31,7 +31,7 @@ to_run = [
 #%% Define analyzer for computing DALYs
 class dalys(hpv.Analyzer):
 
-    def __init__(self, max_age=84, cancer=None, dysplasia=None, **kwargs):
+    def __init__(self, max_age=84, cancer=None, **kwargs):
         super().__init__(**kwargs)
         self.max_age = max_age
         self.cancer = cancer if cancer else dict(dur=1, wt=0.16325) # From GBD 2017, calculated as 1 yr @ 0.288 (primary), 4 yrs @ 0.049 (maintenance), 0.5 yrs @ 0.451 (late), 0.5 yrs @ 0.54 (tertiary), scaled up to 12 years
@@ -77,7 +77,7 @@ def make_sim(seed=0):
         rand_seed       = seed,
     )
 
-    sim = hpv.Sim(pars=pars, analyzers=dalys)
+    sim = hpv.Sim(pars=pars)
 
     return sim
 
@@ -236,11 +236,11 @@ def run_scens(sim=None, seed=0, n_seeds=3, meta=None, verbose=0, debug=debug):
     #### Set up scenarios to compare algoriths 2 & 3
     ####################################################################
     scenarios = {
-        'baseline': {'name': 'No screening','pars': {}},
-        'algo1':    {'name': 'Algorithm 1', 'pars': {'interventions': algo1}},
-        'algo2':    {'name': 'Algorithm 2', 'pars': {'interventions': algo2}},
-        'algo3':    {'name': 'Algorithm 3', 'pars': {'interventions': algo3}},
-        'algo5':    {'name': 'Algorithm 5', 'pars': {'interventions': algo5}},
+        'baseline': {'name': 'No screening','pars': {'analyzers': [dalys]}},
+        'algo1':    {'name': 'Algorithm 1', 'pars': {'interventions': algo1, 'analyzers': [dalys]}},
+        'algo2':    {'name': 'Algorithm 2', 'pars': {'interventions': algo2, 'analyzers': [dalys]}},
+        'algo3':    {'name': 'Algorithm 3', 'pars': {'interventions': algo3, 'analyzers': [dalys]}},
+        'algo5':    {'name': 'Algorithm 5', 'pars': {'interventions': algo5, 'analyzers': [dalys]}},
     }
     scens = hpv.Scenarios(sim=sim, metapars={'n_runs': n_seeds}, scenarios=scenarios)
     scens.run()
@@ -330,11 +330,13 @@ def run_cea():
     }
 
     # Print results
+    print("Total costs are:")
     print(f"Algorithm 1: {total_costs['algo1']['total']}")
     print(f"Algorithm 2: {total_costs['algo2']['total']}")
     print(f"Algorithm 3: {total_costs['algo3']['total']}")
     print(f"Algorithm 5: {total_costs['algo5']['total']}")
 
+    print("Cost per cancers averted")
     print(f"Algorithm 1: {icers['algo1']}")
     print(f"Algorithm 2: {icers['algo2']}")
     print(f"Algorithm 3: {icers['algo3']}")
