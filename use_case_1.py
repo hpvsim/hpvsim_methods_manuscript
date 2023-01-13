@@ -22,9 +22,9 @@ debug = 0
 resfolder = 'results'
 figfolder = 'figures'
 to_run = [
-    # 'run_scenarios',
+    'run_scenarios',
     # 'run_cea',
-    'plot_scenarios',
+    # 'plot_scenarios',
 ]
 
 
@@ -291,9 +291,9 @@ def run_scens(sim=None, seed=0, n_seeds=3, meta=None, verbose=0, debug=debug):
     to_cyto = lambda sim: sim.get_intervention('hpv primary').outcomes['positive']
     cytology = hpv.routine_triage(
         product='lbc',
-        prob=primary_screen_prob,
+        prob=triage_screen_prob,
         eligibility=to_cyto,
-        start_year=start_year,
+        annual_prob=False,
         label='cytology',
     )
 
