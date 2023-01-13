@@ -69,11 +69,10 @@ def make_sim(seed=0):
     # Parameters
     pars = dict(
         n_agents        = [50e3,5e3][debug],
-        dt              = [0.5,1.0][debug],
-        start           = [1975,2000][debug],
+        dt              = [0.25,1.0][debug],
+        start           = [1950,2000][debug],
         end             = 2060,
-        ms_agent_ratio  = 10,
-        burnin          = [45,0][debug],
+        ms_agent_ratio  = 100,
         rand_seed       = seed,
     )
 
