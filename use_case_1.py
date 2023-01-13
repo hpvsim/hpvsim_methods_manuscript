@@ -18,7 +18,7 @@ from analyzers import dalys
 
 
 #%% Run configurations
-debug = 1
+debug = 0
 resfolder = 'results'
 figfolder = 'figures'
 to_run = [
@@ -43,7 +43,7 @@ def make_sim(seed=0):
         rand_seed       = seed,
     )
 
-    sim = hpv.Sim(pars=pars)
+    sim = hpv.Sim(pars=pars, analyzers=[hpv.daly_computation(start=2020)])
 
     return sim
 
@@ -202,11 +202,11 @@ def run_scens(sim=None, seed=0, n_seeds=3, meta=None, verbose=0, debug=debug):
     #### Set up scenarios to compare algoriths 2 & 3
     ####################################################################
     scenarios = {
-        'baseline': {'name': 'No screening','pars': {'analyzers': [dalys]}},
-        'algo1':    {'name': 'Algorithm 1', 'pars': {'interventions': algo1, 'analyzers': [dalys]}},
-        'algo2':    {'name': 'Algorithm 2', 'pars': {'interventions': algo2, 'analyzers': [dalys]}},
-        'algo3':    {'name': 'Algorithm 3', 'pars': {'interventions': algo3, 'analyzers': [dalys]}},
-        'algo5':    {'name': 'Algorithm 5', 'pars': {'interventions': algo5, 'analyzers': [dalys]}},
+        'baseline': {'name': 'No screening','pars': {}},
+        'algo1':    {'name': 'Algorithm 1', 'pars': {'interventions': algo1}},
+        'algo2':    {'name': 'Algorithm 2', 'pars': {'interventions': algo2}},
+        'algo3':    {'name': 'Algorithm 3', 'pars': {'interventions': algo3}},
+        'algo5':    {'name': 'Algorithm 5', 'pars': {'interventions': algo5}},
     }
     scens = hpv.Scenarios(sim=sim, metapars={'n_runs': n_seeds}, scenarios=scenarios)
     scens.run()
@@ -226,10 +226,10 @@ def run_cea():
     si = sc.findinds(s2.res_yearvec, 2025)[0]
     pop_scale = 1250 # Approximate number of people represented by each agent - assumes pop size of 62.5m in 1975
 
-    # dalys = {}
-    # for sim, scen in zip([s0, s1, s2, s3, s5],['baseline', 'algo1', 'algo2', 'algo3', 'algo5']):
-    #     a = sim.get_analyzers()[0]
-    #     dalys[scen] = a.dalys
+    dalys = {}
+    for sim, scen in zip([s0, s1, s2, s3, s5],['baseline', 'algo1', 'algo2', 'algo3', 'algo5']):
+        a = sim.get_analyzers()[0]
+        dalys[scen] = a.dalys
 
 
     products = {
