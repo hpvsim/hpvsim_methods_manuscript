@@ -172,13 +172,6 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
     ]
 
     sim = hpv.Sim(pars, interventions=interventions, analyzers=analyzers)
-    sim.initialize()
-    sim['genotype_pars']['hpv18'].rel_beta = 1.5
-    sim['genotype_pars']['hpv18'].dur_dysp['par1'] = 5
-    sim['genotype_pars']['hpv18'].dur_dysp['par2'] = 2
-    sim['genotype_pars']['hpv18'].cancer_prob = 0.005
-    sim['genotype_pars']['hpv16'].cancer_prob = 0.017
-    sim['genotype_pars']['hrhpv'].cancer_prob = 0.002
 
     # Store metadata
     if meta is not None:
@@ -447,8 +440,8 @@ if __name__ == '__main__':
         fig, axes = pl.subplots(1, 2, figsize=(16, 8))
         quantiles = np.array([0.1,0.5,0.9])
         axtitles = [
-            'Proportion exposed by age, 2015',
-            'Additional cancers averted by\ncatch-up vaccination (%, 2025-2060)',
+            'Percentage infected by age, 2015',
+            'Additional cervical cancers averted by\ncatch-up vaccination (2025-2060)',
         ]
 
         # Exposure by age and setting
@@ -456,13 +449,17 @@ if __name__ == '__main__':
         ages = np.arange(10, 25)
         for sn, skey, sname in settings.enumitems():
             ddf = exposure[(exposure.setting == skey) & (exposure.year == 2015) & (exposure.vx_scen == 'routine')]
-            best = np.array(ddf.best)[0] # TEMP indexing fix
-            low = np.array(ddf.low)[0] # TEMP indexing fix
-            high = np.array(ddf.high)[0] # TEMP indexing fix
+            best = 100*np.array(ddf.best)[0] # TEMP indexing fix
+            low = 100*np.array(ddf.low)[0] # TEMP indexing fix
+            high = 100*np.array(ddf.high)[0] # TEMP indexing fix
             ax.plot(ages, best, color=colors[sn], label=sname)
             ax.fill_between(ages, low, high, color=colors[sn], alpha=0.3)
         ax.legend(loc='upper left')
         ax.set_title(axtitles[0])
+        ax.set_ylabel('% infected')
+        ax.set_xlabel('Age')
+        ax.set_ylim([0,85])
+        sc.SIticks(ax)
 
         # Cancers averted
         for vn,vx_scen in enumerate(['campaign']):
@@ -480,6 +477,7 @@ if __name__ == '__main__':
             ax.set_xticks(x, settings.values())
             ax.yaxis.set_major_formatter(mtick.PercentFormatter())
             ax.set_title(axtitles[vn+1])
+            ax.set_ylabel('% of cases averted')
             sc.SIticks(ax)
             fig.tight_layout()
             fig_name = f'{figfolder}/uc2_plot.png'
