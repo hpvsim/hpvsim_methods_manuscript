@@ -38,8 +38,8 @@ to_run = [
     # 'run_sims',
     # 'plot_mixing',
     # 'plot_sims',
-    # 'run_scenarios',
-    'plot_scenarios',
+    'run_scenarios',
+    # 'plot_scenarios',
 ]
 
 #%% Define parameters
@@ -116,7 +116,7 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
     if debug: msg += ' IN DEBUG MODE'
     print(msg)
 
-    if exposure_years is None: exposure_years=[2015,2025,2060]
+    if exposure_years is None: exposure_years=[2024]
 
     # Parameters
     pars = dict(
@@ -138,27 +138,27 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
         vax_eligible = lambda sim: np.isnan(sim.people.date_vaccinated)
 
         if 'routine' in vx_scen:
-            # Routine vaccination, 9-14
+            # Routine vaccination, 9-12
             routine_vx = hpv.routine_vx(
                 prob=.5,
                 sex=0,
                 start_year=2025,
                 product='bivalent',
                 eligibility=vax_eligible,
-                age_range=(9, 14),
+                age_range=(9, 12),
                 label='Routine'
             )
             interventions.append(routine_vx)
 
         if 'campaign' in vx_scen:
-            # One-off catch-up for people 15-24
+            # One-off catch-up for people 13-24
             campaign_vx = hpv.campaign_vx(
                 prob=.5,
                 sex=0,
                 years=[2025],
                 product='bivalent',
                 eligibility=vax_eligible,
-                age_range=(15, 24),
+                age_range=(13, 24),
                 label='Campaign'
             )
             interventions.append(campaign_vx)
@@ -225,7 +225,7 @@ def make_msims(sims, use_mean=True):
     return msim
 
 
-def run_scens(settings=None, vx_scens=None, n_seeds=20, verbose=0, debug=debug, exposure_years=None):
+def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug, exposure_years=None):
     ''' Run scenarios for all specified settings '''
 
     # Set up iteration arguments
@@ -244,7 +244,7 @@ def run_scens(settings=None, vx_scens=None, n_seeds=20, verbose=0, debug=debug, 
                 ikw.append(sc.dcp(meta.vals))
                 ikw[-1].meta = meta
 
-    if exposure_years is None: exposure_years=[2015,2025,2060]
+    if exposure_years is None: exposure_years=[2024]
 
     # Run sims in parallel
     sc.heading(f'Running {len(ikw)} scenario sims...')
@@ -333,7 +333,7 @@ if __name__ == '__main__':
 
     # Run sims in parallel
     if 'run_sims' in to_run:
-        sim = run_sims(settings=settings, verbose=0.1, debug=debug, exposure_years=[2015,2025,2060])
+        sim = run_sims(settings=settings, verbose=0.1, debug=debug, exposure_years=[2024])
 
     # Run scenarios
     if 'run_scenarios' in to_run:
@@ -448,7 +448,7 @@ if __name__ == '__main__':
         ax = axes[0]
         ages = np.arange(10, 25)
         for sn, skey, sname in settings.enumitems():
-            ddf = exposure[(exposure.setting == skey) & (exposure.year == 2015) & (exposure.vx_scen == 'routine')]
+            ddf = exposure[(exposure.setting == skey) & (exposure.year == 2024) & (exposure.vx_scen == 'routine')]
             best = 100*np.array(ddf.best)[0] # TEMP indexing fix
             low = 100*np.array(ddf.low)[0] # TEMP indexing fix
             high = 100*np.array(ddf.high)[0] # TEMP indexing fix

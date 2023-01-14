@@ -22,8 +22,8 @@ debug = 0
 resfolder = 'results'
 figfolder = 'figures'
 to_run = [
-    'run_scenarios',
-    # 'run_cea',
+    # 'run_scenarios',
+    'run_cea',
     # 'plot_scenarios',
 ]
 
@@ -413,8 +413,8 @@ def run_cea():
             total_products[algo][product_name] = sum(products_used)
 
     # Create a hypothetical dataframe of costs
-    costs = {'hpv primary': 10, 'cytology': 20, 'hpv triage': 10, 'colposcopy': 15, 'ablation': 30, 'hpv genotype primary': 30,
-             'via primary': 2, 'via triage': 2}
+    costs = {'hpv primary': 20, 'cytology': 20, 'hpv triage': 20, 'colposcopy': 20, 'ablation': 5, 'hpv genotype primary': 30,
+             'via primary': 13, 'via triage': 13}
 
     # Dicsounted costs
     discounted_costs = {}
@@ -464,7 +464,8 @@ def run_cea():
     base_DALYs = total_df.iloc[0]['DALYs']
     total_df['DALYs averted'] = base_DALYs - total_df['DALYs']
 
-    data_to_plot = total_df[total_df['Scenario'] != 'baseline']
+    data_to_plot = total_df.copy()
+    # data_to_plot = total_df[total_df['Scenario'] != 'baseline']
     efficiency_data = data_to_plot.copy().sort_values('Costs').reset_index(drop=True)
     efficient_scenarios = efficiency_data['Scenario'].values
     num_scens = len(efficient_scenarios)-1
@@ -506,6 +507,7 @@ def run_cea():
                     extended_dominance_check = False
 
     scen_labels = {
+        'baseline': 'No Screening',
         'algo1': 'Algorithm 1',
         'algo2': 'Algorithm 2',
         'algo3': 'Algorithm 3',
@@ -521,7 +523,7 @@ def run_cea():
     efficiency_data.plot(ax=ax, kind='line', x='DALYs averted', y='Costs', color='black',
                          label='Efficiency frontier')
 
-    for i, scen in enumerate(['algo1', 'algo2', 'algo3', 'algo4', 'algo5', 'algo6', 'algo7']):
+    for i, scen in enumerate(['baseline', 'algo1', 'algo2', 'algo3', 'algo4', 'algo5', 'algo6', 'algo7']):
         group = data_to_plot[data_to_plot['Scenario'] == scen]
         group.plot(ax=ax, kind='scatter', x='DALYs averted', y='Costs', label=scen_labels[scen],
                    color=colors[i], s=200)
