@@ -38,8 +38,8 @@ to_run = [
     # 'run_sims',
     # 'plot_mixing',
     # 'plot_sims',
-    'run_scenarios',
-    # 'plot_scenarios',
+    # 'run_scenarios',
+    'plot_scenarios',
 ]
 
 #%% Define parameters
@@ -458,7 +458,7 @@ if __name__ == '__main__':
         ax.set_title(axtitles[0])
         ax.set_ylabel('% infected')
         ax.set_xlabel('Age')
-        ax.set_ylim([0,85])
+        ax.set_ylim(bottom=0)
         sc.SIticks(ax)
 
         # Cancers averted
