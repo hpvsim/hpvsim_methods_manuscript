@@ -1,5 +1,5 @@
 """
-This script runs Use Case 1 from the HPVsim methods manuscript.
+This script runs Use Case 2 from the HPVsim methods manuscript.
 
 *Motivation*
 Prophylactic vaccination is one of the most essential and effective pillars of
@@ -81,7 +81,7 @@ class prop_exposed(hpv.Analyzer):
             tpi = self.timepoints.index(sim.t)
             year = self.years[tpi]
             prop_exposed = sc.autolist()
-            for a in range(10,25):
+            for a in range(10,30):
                 ainds = hpv.true((sim.people.age >= a) & (sim.people.age < a+1) & (sim.people.sex==0))
                 prop_exposed += sc.safedivide(sum((~np.isnan(sim.people.date_exposed[:, ainds])).any(axis=0)), len(ainds))
             self.prop_exposed[year] = np.array(prop_exposed)
@@ -446,7 +446,7 @@ if __name__ == '__main__':
 
         # Exposure by age and setting
         ax = axes[0]
-        ages = np.arange(10, 25)
+        ages = np.arange(10, 30)
         for sn, skey, sname in settings.enumitems():
             ddf = exposure[(exposure.setting == skey) & (exposure.year == 2024) & (exposure.vx_scen == 'routine')]
             best = 100*np.array(ddf.best)[0] # TEMP indexing fix
