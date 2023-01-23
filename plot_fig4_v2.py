@@ -13,14 +13,27 @@ import seaborn as sns
 
 
 #%% Plotting function
+
+def lognorm_params(par1, par2):
+    """
+    Given the mean and std. dev. of the log-normal distribution, this function
+    returns the shape and scale parameters for scipy's parameterization of the
+    distribution.
+    """
+    mean = np.log(par1 ** 2 / np.sqrt(par2 ** 2 + par1 ** 2))  # Computes the mean of the underlying normal distribution
+    sigma = np.sqrt(np.log(par2 ** 2 / par1 ** 2 + 1))  # Computes sigma for the underlying normal distribution
+
+    scale = np.exp(mean)
+    shape = sigma
+    return shape, scale
+
+
 def plot_fig4():
 
     # Group genotypes
     genotypes = ['hpv16', 'hpv18', 'hrhpv']
     sim = hpv.Sim(genotypes=genotypes)
     sim.initialize()
-    sim['genotype_pars']['hpv16']['prog_rate'] = 0.3
-    sim['genotype_pars']['hpv18']['prog_rate'] = 0.4
 
     # Get parameters
     ng = sim['n_genotypes']
@@ -29,16 +42,25 @@ def plot_fig4():
     # Get parameters
     genotype_pars = sim['genotype_pars']
 
-    # Shorten duration names
-    dur_precin = [genotype_pars[genotype_map[g]]['dur_precin'] for g in range(ng)]
-    dur_dysp = [genotype_pars[genotype_map[g]]['dur_dysp'] for g in range(ng)]
-    dysp_rate = [genotype_pars[genotype_map[g]]['dysp_rate'] for g in range(ng)]
+
+    genotype_pars['hpv16']['cancer_prob'] = 0.0004
+    genotype_pars['hrhpv']['cancer_prob'] = 0.0003
+
+    # Shorten names
+    dur_episomal = [genotype_pars[genotype_map[g]]['dur_episomal'] for g in range(ng)]
+    trans_rate = [genotype_pars[genotype_map[g]]['trans_rate'] for g in range(ng)]
+    trans_infl = [genotype_pars[genotype_map[g]]['trans_infl'] for g in range(ng)]
     prog_rate = [genotype_pars[genotype_map[g]]['prog_rate'] for g in range(ng)]
+    prog_rate_sd = [genotype_pars[genotype_map[g]]['prog_rate_sd'] for g in range(ng)]
+    prog_infl = [genotype_pars[genotype_map[g]]['prog_infl'] for g in range(ng)]
+    cancer_probs = [genotype_pars[genotype_map[g]]['cancer_prob'] for g in range(ng)]
+    clearance_decay = [genotype_pars[genotype_map[g]]['clearance_decay'] for g in range(ng)]
+    init_clearance_prob = [genotype_pars[genotype_map[g]]['init_clearance_prob'] for g in range(ng)]
 
     ####################
     # Make figure, set fonts and colors
     ####################
-    ut.set_font(size=32)
+    ut.set_font(size=25)
     colors = sc.gridcolors(10)
     cmap = pl.cm.Oranges([0.25, 0.5, 0.75, 1])
     fig, ax = pl.subplot_mosaic('AB;CD;EF', figsize=(16, 20))
@@ -47,187 +69,158 @@ def plot_fig4():
     # Panel A and C
     ####################
 
-    x = np.linspace(0.01, 3, 200) # Make an array of durations 0-3 years
-    glabels = [16,18,'OHR']
+    x = np.linspace(0.01, 10, 200)  # Make an array of durations 0-15 years
+    glabels = ['HPV16', 'HPV18', 'HRHPV']
+    dysp_shares = []
+    gtypes = []
+    igi = 0.01  # Define the integration interval
+    longx = sc.inclusiverange(0.01, 20, igi)  # Initialize a LONG array of years
 
     # Loop over genotypes, plot each one
     for gi, gtype in enumerate(genotypes):
-        sigma, scale = ut.lognorm_params(genotype_pars[gtype]['dur_precin']['par1'],
-                                         genotype_pars[gtype]['dur_precin']['par2'])
+        sigma, scale = lognorm_params(dur_episomal[gi]['par1'], dur_episomal[gi]['par2'])
         rv = lognorm(sigma, 0, scale)
+        aa = np.diff(rv.cdf(
+            longx))  # Calculate the probability that a woman will have a pre-dysplasia duration in any of the subintervals of time spanning 0-25 years
+        bb = hpu.logf2(longx, trans_infl[gi], trans_rate[gi])[
+             1:]  # Calculate the probablity of her developing dysplasia for a given duration
+        dysp_shares.append(np.dot(aa,
+                                  bb))  # Convolve the two above calculations to determine the probability of her developing dysplasia overall
+        gtypes.append(gtype)  # Store genotype names for labeling
         ax['A'].plot(x, rv.pdf(x), color=colors[gi], lw=2, label=glabels[gi])
-        ax['C'].plot(x, ut.logf1(x, genotype_pars[gtype]['dysp_rate']), color=colors[gi], lw=2, label=gtype.upper())
+        ax['C'].plot(x, hpu.logf2(x, trans_infl[gi], trans_rate[gi]), color=colors[gi], lw=2, label=gtype.upper())
+
+    bottom = np.zeros(ng)
+    ax['E'].bar(np.arange(1, ng + 1), 1 - np.array(dysp_shares), color='grey', bottom=bottom, label='Episomal')
+    ax['E'].bar(np.arange(1, ng + 1), np.array(dysp_shares), color=cmap[0], bottom=1 - np.array(dysp_shares),
+                label='Transforming')
+    ax['E'].set_xticks(np.arange(1, ng + 1))
+    ax['E'].set_xticklabels(glabels)
+    ax['E'].set_ylabel("")
+    ax['E'].set_ylabel("Distribution of infection\noutcomes")
 
     # Axis labeling and other settings
-    ax['C'].set_xlabel("Duration of infection prior to\ncontrol/clearance/dysplasia (months)")
+    ax['C'].set_xlabel("Total duration of episomal infection (years)")
     for axn in ['A', 'C']:
         ax[axn].set_ylabel("")
         ax[axn].grid()
-        ax[axn].set_xticks(np.arange(4))
-        ax[axn].set_xticklabels([0, 12, 24, 36])
+
     ax['A'].set_ylabel("Density")
-    ax['C'].set_ylabel("Probability of developing\ndysplasia")
-    ax['A'].set_xlabel("Duration of infection prior to\ncontrol/clearance/dysplasia (months)")
+    ax['C'].set_ylabel("Cumulative probability\nof transformation")
+    ax['A'].set_xlabel("Total duration of episomal infection (years)")
 
-    ax['A'].legend(fontsize=28, frameon=False)
+    ax['A'].legend(fontsize=20, frameon=True)
+    ax['E'].legend(fontsize=20, frameon=True, loc='lower right')
 
     ####################
-    # Panel B and D
+    # Make plots
     ####################
 
-    thisx = np.linspace(0.01, 25, 100)
+    thisx = np.linspace(0.01, 40, 100)
     n_samples = 10
 
+    def cancer_prob(cp, dysp):
+        return 1 - np.power(1 - cp, dysp * 100)
+
+    def clearance_prob(cp_adj, cp, dysp):
+        return cp_adj * (1 - (1 - np.power(1 - cp, dysp * 100)))
+
+    cum_cps = []
+    cum_clear_ps = []
     # Durations and severity of dysplasia
     for gi, gtype in enumerate(genotypes):
-        sigma, scale = ut.lognorm_params(genotype_pars[gtype]['dur_dysp']['par1'],
-                                         genotype_pars[gtype]['dur_dysp']['par2'])
-        rv = lognorm(sigma, 0, scale)
-        ax['B'].plot(thisx, rv.pdf(thisx), color=colors[gi], lw=2, label=gtype.upper())
-        ax['D'].plot(thisx, ut.logf2(thisx, genotype_pars[gtype]['cancer_prob_growth_infl'], genotype_pars[gtype]['cancer_prob_growth_rate']), color=colors[gi], lw=2,
-                       label=gtype.upper())
-        ax['E'].plot(thisx, ut.logf1(thisx, genotype_pars[gtype]['prog_rate']), color=colors[gi], lw=2,
-                       label=gtype.upper())
-        for year in range(1, 26):
-            peaks = ut.logf1(year, hpu.sample(dist='normal', par1=genotype_pars[gtype]['prog_rate'],
-                                              par2=genotype_pars[gtype]['prog_rate_sd'], size=n_samples))
-            ax['E'].plot([year] * n_samples, peaks, color=colors[gi], lw=0, marker='o', alpha=0.5)
+        ax['B'].plot(thisx, hpu.logf2(thisx, prog_infl[gi], prog_rate[gi]), color=colors[gi], lw=3, label=gtype.upper())
+        for smpl in range(n_samples):
+            pr = hpu.sample(dist='normal_pos', par1=prog_rate[gi], par2=prog_rate_sd[gi])
+            ax['B'].plot(thisx, hpu.logf2(thisx, prog_infl[gi], pr), color=colors[gi], lw=1, alpha=0.5, label=gtype.upper())
+
+        cp = cancer_prob(cancer_probs[gi], hpu.logf2(thisx, prog_infl[gi], prog_rate[gi]))
+        clear_p = clearance_prob(init_clearance_prob[gi], clearance_decay[gi],
+                                 hpu.logf2(thisx, prog_infl[gi], prog_rate[gi]))
+        # cum_cps.append(np.cumsum(cp))
+        # cum_clear_ps.append(np.cumsum(clear_p))
+        ax['D'].plot(thisx, cp, color=colors[gi], label=gtype.upper())
+        ax['D'].plot(thisx, clear_p, color=colors[gi], ls='--', label=gtype.upper())
 
     ax['B'].set_ylabel("")
-    # ax['C'].legend(fontsize=18)
     ax['B'].grid()
-    ax['B'].set_ylabel("Density")
-    ax['C'].set_ylim([0, 1])
-    ax['B'].set_xlabel("Duration of dysplasia prior to\nregression/cancer (years)")
+    ax['B'].set_ylim([0, 1])
+    ax['B'].set_xlabel("Time with transforming infection (years)")
+    ax['B'].set_ylabel("% of cells transformed")
 
-    # Cancer outcome and severity
-    ax['D'].set_xlabel("Duration of dysplasia prior to\nregression/cancer (years)")
-    ax['D'].set_ylabel("Probability of cervical\ncancer invasion")
-    ax['D'].set_ylim([0, 1])
+    ax['D'].set_ylabel("Probability of invasion\nor clearance")
+    ax['D'].set_xlabel("Time with transforming infection (years)")
+    ax['D'].grid()
+    h, l = ax['D'].get_legend_handles_labels()
 
-
-    ax['E'].set_xlabel("Time spent with dysplasia (years)")
-    ax['E'].set_ylabel("Degree of dysplasia")
-    ax['E'].set_ylim([0, 1])
-    ax['E'].axhline(y=0.33, ls=':', c='k')
-    ax['E'].axhline(y=0.67, ls=':', c='k')
-    ax['E'].axhspan(0, 0.33, color=cmap[0], alpha=.4)
-    ax['E'].axhspan(0.33, 0.67, color=cmap[1], alpha=.4)
-    ax['E'].axhspan(0.67, 1, color=cmap[2], alpha=.4)
-    ax['E'].text(-0.3, 0.08, 'CIN1', rotation=90)
-    ax['E'].text(-0.3, 0.4, 'CIN2', rotation=90)
-    ax['E'].text(-0.3, 0.73, 'CIN3', rotation=90)
+    ax['D'].legend([h[0], h[1]], ['Cervical cancer invasion', 'HPV clearance'], loc='upper right')
 
     ####################
     # Panel F
     ####################
 
+    # Now determine outcomes for those with transformation
+
+    longx = np.linspace(1, 40, 40)
+    n_samples = 1000
+    cancers = dict()
+    cinshares, cancershares = [], []
+    for gi, gtype in enumerate(genotypes):
+        cancers[gtype] = 0
+        pr = hpu.sample(dist='normal_pos', par1=prog_rate[gi], par2=prog_rate_sd[gi], size=n_samples)
+        for x in longx:
+            cp = cancer_prob(cancer_probs[gi], hpu.logf2(x, prog_infl[gi], pr))
+            has_cancer = hpu.n_binomial(cp, len(cp))
+            cancer_inds = hpu.true(has_cancer)
+            cancers[gtype] += len(cancer_inds)
+            pr = pr[~has_cancer]
+            cp = clearance_prob(init_clearance_prob[gi], clearance_decay[gi], hpu.logf2(x, prog_infl[gi], pr))
+            clears_hpv = hpu.n_binomial(cp, len(cp))
+            pr = pr[~clears_hpv]
+
+        cancer_share = cancers[gtype] / n_samples
+        cin_share = 1 - cancer_share
+        cinshares.append(cin_share)
+        cancershares.append(cancer_share)
+
     # This section calculates the overall share of outcomes for people infected with each genotype
-    dysp_shares = [] # Initialize the share of people who develop ANY dysplasia
-    gtypes = []      # Initialize genotypes -- TODO, is this necessary?
-    noneshares, cin1shares, cin2shares, cin3shares, cancershares = [], [], [], [], [] # Initialize share by each outcome
-    igi = 0.01 # Define the integration interval
-    longx = sc.inclusiverange(0.01,80,igi) # Initialize a LONG array of years
-
-    # Loop over genotypes
-    for g in range(ng):
-
-        # Firstly, determine shares of women who develop any dysplasia
-        sigma, scale = ut.lognorm_params(dur_precin[g]['par1'], dur_precin[g]['par2']) # Calculate parameters in the format expected by scipy
-        rv = lognorm(sigma, 0, scale) # Create scipy rv object
-        aa = np.diff(rv.cdf(longx))  # Calculate the probability that a woman will have a pre-dysplasia duration in any of the subintervals of time spanning 0-25 years
-        bb = ut.logf1(longx, dysp_rate[g])[1:] # Calculate the probablity of her developing dysplasia for a given duration
-        dysp_shares.append(np.dot(aa, bb)) # Convolve the two above calculations to determine the probability of her developing dysplasia overall
-        gtypes.append(genotype_map[g].replace('hpv', '')) # Store genotype names for labeling
-
-    for g, gtype in enumerate(genotypes):
-        # Next, determine the outcomes for women who do develop dysplasia
-        sigma, scale = ut.lognorm_params(dur_dysp[g]['par1'], dur_dysp[g]['par2']) # Calculate parameters in the format expected by scipy
-        rv = lognorm(sigma, 0, scale) # Create scipy rv object
-        peak_dysp = ut.logf1(longx, prog_rate[g]) # Calculate peak dysplasia
-
-        # To start find women who advance to cancer
-        cancer_probs = ut.logf2(longx, genotype_pars[gtype]['cancer_prob_growth_infl'], genotype_pars[gtype]['cancer_prob_growth_rate'])
-        cancer_inds = hpu.true(hpu.n_binomial(cancer_probs, len(longx)))  # Use binomial probabilities to determine the indices of those who get cancer
-
-        # Find women who only advance to CIN1
-        indcin1 = sc.findinds(peak_dysp < .33)[-1]
-        n_cin1 = len(sc.findinds(peak_dysp < .33))
-        cin1_share = rv.cdf(longx[indcin1]) - rv.cdf(longx[0])
-
-        # See if there are women who advance to CIN2 and get their indices if so
-        if (peak_dysp > .33).any():
-            n_cin2 = len(sc.findinds((peak_dysp > .33) & (peak_dysp < .67)))
-            indcin2 = sc.findinds((peak_dysp > .33) & (peak_dysp < .67))[-1]
-        else:
-            n_cin2 = 0
-            indcin2 = indcin1
-        cin2_share = rv.cdf(longx[indcin2]) - rv.cdf(longx[indcin1])
-
-        if (peak_dysp > .67).any():
-            n_cin3 = len(sc.findinds(peak_dysp > .67))
-            indcin3 = sc.findinds((peak_dysp > 0.67))[-1]  # Index after which people develop CIN3 (plus possibly cancer)
-        else:
-            n_cin3 = 0
-            indcin3 = indcin2
-        cin3_share = rv.cdf(longx[indcin3]) - rv.cdf(longx[indcin2])
-
-        n_cancer_cin1 = len(np.intersect1d(cancer_inds, sc.findinds(peak_dysp < .33)))
-        n_cancer_cin2 = len(np.intersect1d(cancer_inds, sc.findinds((peak_dysp > .33) & (peak_dysp < .67))))
-        n_cancer_cin3 = len(np.intersect1d(cancer_inds, sc.findinds((peak_dysp > 0.67))))
-
-        cancer_share_of_cin1s = n_cancer_cin1/n_cin1 # Share of CIN1 women who get cancer
-        cancer_share_of_cin2s = n_cancer_cin2/n_cin2 # Share of CIN2 women who get cancer
-        cancer_share_of_cin3s = n_cancer_cin3/n_cin3 # Share of CIN3 women who get cancer
-
-        cin1_share *= 1-cancer_share_of_cin1s
-        cin2_share *= 1-cancer_share_of_cin2s
-        cin3_share *= 1-cancer_share_of_cin3s
-        cancer_share = 1 - (cin1_share+cin2_share+cin3_share)
-
-        noneshares.append(1 - dysp_shares[g])
-        cin1shares.append(cin1_share * dysp_shares[g])
-        cin2shares.append(cin2_share * dysp_shares[g])
-        cin3shares.append(cin3_share * dysp_shares[g])
-        cancershares.append(cancer_share * dysp_shares[g])
-
-
-    # Final plot
     bottom = np.zeros(ng)
-    all_shares = [noneshares,
-                  cin1shares,
-                  cin2shares,
-                  cin3shares,
+    all_shares = [cinshares,
                   cancershares
                   ]
 
-    for gn, grade in enumerate(['No dysplasia', 'CIN1', 'CIN2', 'CIN3', 'Cancer']):
+    for gn, grade in enumerate(['Pre-cancer', 'Cervical cancer']):
         ydata = np.array(all_shares[gn])
-        #if len(ydata.shape) > 1: ydata = ydata[:, 0]
-        color = cmap[gn-1,:] if gn > 0 else 'gray'
+        color = cmap[gn + 1, :]
         ax['F'].bar(np.arange(1, ng + 1), ydata, color=color, bottom=bottom, label=grade)
         bottom = bottom + ydata
 
-    ax['F'].set_xticks(np.arange(1,ng + 1))
+    ax['F'].set_xticks(np.arange(1, ng + 1))
     ax['F'].set_xticklabels(glabels)
     ax['F'].set_ylabel("")
-    ax['F'].set_ylabel("Distribution of outcomes")
-    ax['F'].legend(fontsize=20, frameon=True, loc='best')
-    handles, labels = ax['F'].get_legend_handles_labels()
-
-    # ax['F'].set_axis_off()
-    # ax['F'].legend(handles, labels, bbox_to_anchor=(0.5, 1), frameon=False)
+    ax['F'].set_ylabel("Distribution of transformation\noutcomes")
+    ax['F'].legend(fontsize=20, frameon=True, loc='lower right')
 
     fs=40
-    pl.figtext(0.06, 0.975, 'A', fontweight='bold', fontsize=fs)
-    pl.figtext(0.52, 0.975, 'C', fontweight='bold', fontsize=fs)
-    pl.figtext(0.06, 0.62, 'B', fontweight='bold', fontsize=fs)
-    pl.figtext(0.52, 0.62, 'D', fontweight='bold', fontsize=fs)
-    pl.figtext(0.06, 0.3, 'E', fontweight='bold', fontsize=fs)
+    pl.figtext(0.03, 0.975, 'A', fontweight='bold', fontsize=fs)
+    pl.figtext(0.52, 0.975, 'D', fontweight='bold', fontsize=fs)
+    pl.figtext(0.03, 0.62, 'B', fontweight='bold', fontsize=fs)
+    pl.figtext(0.52, 0.62, 'E', fontweight='bold', fontsize=fs)
+    pl.figtext(0.03, 0.3, 'C', fontweight='bold', fontsize=fs)
     pl.figtext(0.52, 0.3, 'F', fontweight='bold', fontsize=fs)
 
     fig.tight_layout()
     pl.savefig(f"{ut.figfolder}/fig4_v2.png", dpi=100)
+
+    # ut.set_font(size=25)
+    # colors = sc.gridcolors(10)
+    # cmap = pl.cm.Oranges([0.25, 0.5, 0.75, 1])
+    # fig, ax = pl.subplots(figsize=(8, 8))
+    #
+    # for gi, gtype in enumerate(genotypes):
+    #     ax.plot(thisx, cum_cps[gi], color=colors[gi], label='Cancer')
+    #     ax.plot(thisx, cum_clear_ps[gi], color=colors[gi], ls='--', label='Clearance')
+    # fig.show()
 
 #%% Run as a script
 if __name__ == '__main__':
