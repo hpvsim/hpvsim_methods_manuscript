@@ -125,6 +125,18 @@ def plot_fig4():
     def clearance_prob(cp_adj, cp, dysp):
         return cp_adj * (1 - (1 - np.power(1 - cp, dysp * 100)))
 
+    def cum_cancer_prob(cp, x, dysp):
+        dd = np.diff(dysp)
+        n = len(x)
+        result = [1 - np.product([((1 - cp) ** (100 * dd[i])) ** (j - i) for i in range(j)]) for j in range(n)]
+        return result
+
+    def cum_clearance_prob(cp_adj, cp, x, dysp):
+        dd = np.diff(dysp)
+        n = len(x)
+        result = [cp_adj * (1 - np.product([((1 - cp) ** (100 * dd[i])) ** (j - i) for i in range(j)])) for j in range(n)]
+        return result
+
     cum_cps = []
     cum_clear_ps = []
     # Durations and severity of dysplasia
@@ -137,8 +149,8 @@ def plot_fig4():
         cp = cancer_prob(cancer_probs[gi], hpu.logf2(thisx, prog_infl[gi], prog_rate[gi]))
         clear_p = clearance_prob(init_clearance_prob[gi], clearance_decay[gi],
                                  hpu.logf2(thisx, prog_infl[gi], prog_rate[gi]))
-        # cum_cps.append(np.cumsum(cp))
-        # cum_clear_ps.append(np.cumsum(clear_p))
+        cum_cps.append(cum_cancer_prob(cancer_probs[gi], thisx, hpu.logf2(thisx, prog_infl[gi], prog_rate[gi])))
+        cum_clear_ps.append(cum_clearance_prob(init_clearance_prob[gi], clearance_decay[gi], thisx, hpu.logf2(thisx, prog_infl[gi], prog_rate[gi])))
         ax['D'].plot(thisx, cp, color=colors[gi], label=gtype.upper())
         ax['D'].plot(thisx, clear_p, color=colors[gi], ls='--', label=gtype.upper())
 
@@ -209,18 +221,23 @@ def plot_fig4():
     pl.figtext(0.03, 0.3, 'C', fontweight='bold', fontsize=fs)
     pl.figtext(0.52, 0.3, 'F', fontweight='bold', fontsize=fs)
 
-    fig.tight_layout()
+
     pl.savefig(f"{ut.figfolder}/fig4_v2.png", dpi=100)
 
-    # ut.set_font(size=25)
-    # colors = sc.gridcolors(10)
-    # cmap = pl.cm.Oranges([0.25, 0.5, 0.75, 1])
-    # fig, ax = pl.subplots(figsize=(8, 8))
-    #
-    # for gi, gtype in enumerate(genotypes):
-    #     ax.plot(thisx, cum_cps[gi], color=colors[gi], label='Cancer')
-    #     ax.plot(thisx, cum_clear_ps[gi], color=colors[gi], ls='--', label='Clearance')
-    # fig.show()
+    ut.set_font(size=25)
+    colors = sc.gridcolors(10)
+    cmap = pl.cm.Oranges([0.25, 0.5, 0.75, 1])
+    fig, ax = pl.subplots(1, len(genotypes), figsize=(14, 8))
+
+    for gi, gtype in enumerate(genotypes):
+        ax[gi].plot(thisx, cum_cps[gi], color=colors[gi], label='Cancer')
+        ax[gi].plot(thisx, cum_clear_ps[gi], color=colors[gi], ls='--', label='Clearance')
+        ax[gi].set_title(gtype)
+    ax[1].set_xlabel('Total time with transformed cells')
+    ax[0].set_ylabel('Cumulative probability')
+    ax[0].legend()
+    fig.tight_layout()
+    fig.show()
 
 #%% Run as a script
 if __name__ == '__main__':
