@@ -114,13 +114,10 @@ class age_causal_infection_by_genotype(hpv.Analyzer):
 
 
 #%% Plotting function
-def run_calib_tool(calib_pars=None):
+def run_calib_tool():
     # Group genotypes
     genotypes = ['hpv16', 'hpv18', 'hrhpv']
 
-    dt = age_causal_infection_by_genotype(start_year=2000)
-    exposure_years = [2020]
-    pe = prop_exposed(years=exposure_years)
     az = hpv.age_results(
         result_keys=sc.objdict(
             cancers_by_genotype=sc.objdict(
@@ -129,53 +126,28 @@ def run_calib_tool(calib_pars=None):
             ),
             cancers=sc.objdict(
                 timepoints=['2020'],
-                edges=np.array([0., 15., 20., 25., 30., 40., 45., 50., 55., 60., 65., 70., 75., 80., 100.]),            )
+                edges=np.array([0., 15., 20., 25., 30., 40., 45., 50., 55., 60., 65., 70., 75., 80., 100.]),
+            )
         )
     )
-    analyzers = [dt, pe, az]
+    analyzers = [az]
 
     sim = hpv.Sim(
         n_agents=50e3,
-        dt=0.5,
-        location='nigeria',
         start=1950,
         end=2020,
-        condoms=dict(m=0.01, c=0.2, o=0.1),
+        beta=0.15,
         genotypes=genotypes,
         analyzers=analyzers,
         ms_agent_ratio=100,
     )
     sim.initialize()
-    # Create sim to get baseline prognoses parameters
-    if calib_pars is not None:
-
-        ## hpv 16 pars
-        calib_pars['genotype_pars'].hpv16['dur_dysp']['par2'] = 3.8 #4
-        calib_pars['genotype_pars'].hpv16['dur_dysp']['par1'] = 7.25 #13
-        calib_pars['genotype_pars'].hpv16['prog_rate'] = 0.18 #0.099
-        calib_pars['genotype_pars'].hpv16['cancer_prob'] = 0.022 # 0.017
-
-        ## hpv 18 pars
-        calib_pars['genotype_pars'].hpv18['dur_dysp']['par2'] = 0.75
-        calib_pars['genotype_pars'].hpv18['rel_beta'] = 1.22
-        calib_pars['genotype_pars'].hpv18['cancer_prob'] = 0.13
-        # calib_pars['genotype_pars'].hpv18['prog_rate'] = 0.9
-
-        ## hr hpv pars
-        calib_pars['genotype_pars'].hrhpv['dur_dysp']['par2'] = 18
-        # calib_pars['genotype_pars'].hrhpv['dur_dysp']['par1'] = 18
-        calib_pars['genotype_pars'].hrhpv['rel_beta'] = 0.76
-        calib_pars['genotype_pars'].hrhpv['cancer_prob'] = 0.0026
-        # calib_pars['genotype_pars'].hrhpv['prog_rate'] = 0.08
-        print(calib_pars)
-
-        sim.update_pars(calib_pars)
-
-    sim.run()
 
     # Get parameters
     genotype_pars = sim['genotype_pars']
 
+    sim.run()
+    sim.plot()
 
     ut.set_font(size=20)
     # set palette
@@ -254,9 +226,14 @@ def run_calib_tool(calib_pars=None):
     data_cancers.plot(x='age', y='value', label='data', ax=ax[3,0])
     ax[3,0].set_xlabel('')
     ax[3,0].legend()
-    ax[2,1].plot(sim.res_yearvec[10:], sim.results['cancer_incidence'].values[10:], color=colors[8], label='Crude cancer incidence')
-    ax[2,1].plot(sim.res_yearvec[10:], sim.results['asr_cancer_incidence'].values[10:], color=colors[9], label='Age-standardized cancer incidence')
-    ax[2,1].legend()
+    cancer_prob_16 = 1 - (1- genotype_pars['hpv16']['cancer_prob'])**thisx
+    cancer_prob_18 = 1 - (1- genotype_pars['hpv18']['cancer_prob'])**thisx
+    cancer_prob_hr = 1 - (1- genotype_pars['hrhpv']['cancer_prob'])**thisx
+    ax[2,1].plot(thisx, cancer_prob_16, color=colors[0])
+    ax[2, 1].plot(thisx, cancer_prob_18, color=colors[1])
+    ax[2, 1].plot(thisx, cancer_prob_hr, color=colors[2])
+    ax[2, 1].set_ylabel("Cancer probability")
+    ax[2, 1].set_xlabel("Duration of dysplasia prior to\nregression/cancer (years)")
     ax[3,1].scatter(genotypes, sim.results['cancerous_genotype_dist'][:,-1], label='model')
     ax[3,1].scatter(genotypes, data_types['value'], label='data')
     ax[3,1].legend()
@@ -274,9 +251,7 @@ def run_calib_tool(calib_pars=None):
 #%% Run as a script
 if __name__ == '__main__':
 
-    file = f'nigeria_pars.obj'
-    calib_pars = sc.loadobj(file)
 
-    run_calib_tool(calib_pars=calib_pars)
+    run_calib_tool()
 
     print('Done.')

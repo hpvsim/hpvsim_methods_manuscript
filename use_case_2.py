@@ -1,5 +1,5 @@
 """
-This script runs Use Case 1 from the HPVsim methods manuscript.
+This script runs Use Case 2 from the HPVsim methods manuscript.
 
 *Motivation*
 Prophylactic vaccination is one of the most essential and effective pillars of
@@ -38,8 +38,8 @@ to_run = [
     # 'run_sims',
     # 'plot_mixing',
     # 'plot_sims',
-    'run_scenarios',
-    # 'plot_scenarios',
+    # 'run_scenarios',
+    'plot_scenarios',
 ]
 
 #%% Define parameters
@@ -81,7 +81,7 @@ class prop_exposed(hpv.Analyzer):
             tpi = self.timepoints.index(sim.t)
             year = self.years[tpi]
             prop_exposed = sc.autolist()
-            for a in range(10,25):
+            for a in range(10,30):
                 ainds = hpv.true((sim.people.age >= a) & (sim.people.age < a+1) & (sim.people.sex==0))
                 prop_exposed += sc.safedivide(sum((~np.isnan(sim.people.date_exposed[:, ainds])).any(axis=0)), len(ainds))
             self.prop_exposed[year] = np.array(prop_exposed)
@@ -116,20 +116,17 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
     if debug: msg += ' IN DEBUG MODE'
     print(msg)
 
-    if exposure_years is None: exposure_years=[2015,2025,2060]
+    if exposure_years is None: exposure_years=[2024]
 
     # Parameters
     pars = dict(
         n_agents        = [50e3,5e3][debug],
-        dt              = [0.5,1.0][debug],
+        dt              = [0.25,1.0][debug],
         start           = [1950,2000][debug],
         end             = 2060,
         debut           = debut[setting],
         ms_agent_ratio  = 100,
         rand_seed       = seed,
-        beta=0.3,
-        rel_trans_cin2=0.5,
-        rel_trans_cin3=0.25
     )
 
     # Interventions
@@ -141,27 +138,27 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
         vax_eligible = lambda sim: np.isnan(sim.people.date_vaccinated)
 
         if 'routine' in vx_scen:
-            # Routine vaccination, 9-14
+            # Routine vaccination, 9-12
             routine_vx = hpv.routine_vx(
                 prob=.5,
                 sex=0,
                 start_year=2025,
                 product='bivalent',
                 eligibility=vax_eligible,
-                age_range=(9, 14),
+                age_range=(9, 12),
                 label='Routine'
             )
             interventions.append(routine_vx)
 
         if 'campaign' in vx_scen:
-            # One-off catch-up for people 15-24
+            # One-off catch-up for people 13-24
             campaign_vx = hpv.campaign_vx(
                 prob=.5,
                 sex=0,
                 years=[2025],
                 product='bivalent',
                 eligibility=vax_eligible,
-                age_range=(15, 24),
+                age_range=(13, 24),
                 label='Campaign'
             )
             interventions.append(campaign_vx)
@@ -175,13 +172,6 @@ def make_sim(setting=None, vx_scen=None, seed=0, meta=None, exposure_years=None)
     ]
 
     sim = hpv.Sim(pars, interventions=interventions, analyzers=analyzers)
-    sim.initialize()
-    sim['genotype_pars']['hpv18'].rel_beta = 1.5
-    sim['genotype_pars']['hpv18'].dur_dysp['par1'] = 5
-    sim['genotype_pars']['hpv18'].dur_dysp['par2'] = 2
-    sim['genotype_pars']['hpv18'].cancer_prob = 0.005
-    sim['genotype_pars']['hpv16'].cancer_prob = 0.017
-    sim['genotype_pars']['hrhpv'].cancer_prob = 0.002
 
     # Store metadata
     if meta is not None:
@@ -254,7 +244,7 @@ def run_scens(settings=None, vx_scens=None, n_seeds=5, verbose=0, debug=debug, e
                 ikw.append(sc.dcp(meta.vals))
                 ikw[-1].meta = meta
 
-    if exposure_years is None: exposure_years=[2015,2025,2060]
+    if exposure_years is None: exposure_years=[2024]
 
     # Run sims in parallel
     sc.heading(f'Running {len(ikw)} scenario sims...')
@@ -343,7 +333,7 @@ if __name__ == '__main__':
 
     # Run sims in parallel
     if 'run_sims' in to_run:
-        sim = run_sims(settings=settings, verbose=0.1, debug=debug, exposure_years=[2015,2025,2060])
+        sim = run_sims(settings=settings, verbose=0.1, debug=debug, exposure_years=[2024])
 
     # Run scenarios
     if 'run_scenarios' in to_run:
@@ -450,22 +440,26 @@ if __name__ == '__main__':
         fig, axes = pl.subplots(1, 2, figsize=(16, 8))
         quantiles = np.array([0.1,0.5,0.9])
         axtitles = [
-            'Proportion exposed by age, 2015',
-            'Additional cancers averted by\ncatch-up vaccination (%, 2025-2060)',
+            'Percentage infected by age, 2015',
+            'Additional cervical cancers averted by\ncatch-up vaccination (2025-2060)',
         ]
 
         # Exposure by age and setting
         ax = axes[0]
-        ages = np.arange(10, 25)
+        ages = np.arange(10, 30)
         for sn, skey, sname in settings.enumitems():
-            ddf = exposure[(exposure.setting == skey) & (exposure.year == 2015) & (exposure.vx_scen == 'routine')]
-            best = np.array(ddf.best)[0] # TEMP indexing fix
-            low = np.array(ddf.low)[0] # TEMP indexing fix
-            high = np.array(ddf.high)[0] # TEMP indexing fix
+            ddf = exposure[(exposure.setting == skey) & (exposure.year == 2024) & (exposure.vx_scen == 'routine')]
+            best = 100*np.array(ddf.best)[0] # TEMP indexing fix
+            low = 100*np.array(ddf.low)[0] # TEMP indexing fix
+            high = 100*np.array(ddf.high)[0] # TEMP indexing fix
             ax.plot(ages, best, color=colors[sn], label=sname)
             ax.fill_between(ages, low, high, color=colors[sn], alpha=0.3)
         ax.legend(loc='upper left')
         ax.set_title(axtitles[0])
+        ax.set_ylabel('% infected')
+        ax.set_xlabel('Age')
+        ax.set_ylim(bottom=0)
+        sc.SIticks(ax)
 
         # Cancers averted
         for vn,vx_scen in enumerate(['campaign']):
@@ -483,6 +477,7 @@ if __name__ == '__main__':
             ax.set_xticks(x, settings.values())
             ax.yaxis.set_major_formatter(mtick.PercentFormatter())
             ax.set_title(axtitles[vn+1])
+            ax.set_ylabel('% of cases averted')
             sc.SIticks(ax)
             fig.tight_layout()
             fig_name = f'{figfolder}/uc2_plot.png'
