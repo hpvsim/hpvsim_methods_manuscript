@@ -99,14 +99,17 @@ def plot_fig4():
     ax['C'].set_ylim([0,1])
     ax['C'].grid()
 
-    ax['C'].axhline(y=0.33, ls=':', c='k')
-    ax['C'].axhline(y=0.67, ls=':', c='k')
-    ax['C'].axhspan(0, 0.33, color=cmap[0], alpha=.4)
-    ax['C'].axhspan(0.33, 0.67, color=cmap[1], alpha=.4)
-    ax['C'].axhspan(0.67, 1, color=cmap[2], alpha=.4)
-    ax['C'].text(-0.3, 0.08, 'CIN1', rotation=90)
-    ax['C'].text(-0.3, 0.4, 'CIN2', rotation=90)
-    ax['C'].text(-0.3, 0.73, 'CIN3', rotation=90)
+    ax['C'].axhline(y=0.1, ls=':', c='k')
+    ax['C'].axhline(y=0.4, ls=':', c='k')
+    ax['C'].axhline(y=0.7, ls=':', c='k')
+    ax['C'].axhspan(0, 0.1, color='gray', alpha=.4)
+    ax['C'].axhspan(0.1, 0.4, color=cmap[0], alpha=.4)
+    ax['C'].axhspan(0.4, 0.7, color=cmap[1], alpha=.4)
+    ax['C'].axhspan(0.7, 1.0, color=cmap[2], alpha=.4)
+    ax['C'].text(-0.3, 0.05, 'Pre\nCIN', rotation=90)
+    ax['C'].text(-0.3, 0.2, 'CIN1', rotation=90)
+    ax['C'].text(-0.3, 0.5, 'CIN2', rotation=90)
+    ax['C'].text(-0.3, 0.8, 'CIN3', rotation=90)
 
     ax['B'].grid()
     ax['B'].set_ylabel("Probability of transformation")
@@ -117,7 +120,7 @@ def plot_fig4():
     ####################
 
     # This section calculates the overall share of outcomes for people infected with each genotype
-    cin1shares, cin2shares, cin3shares, cancershares = [], [], [], [] # Initialize the share of people who get dysplasia vs cancer
+    precinshares, cin1shares, cin2shares, cin3shares, cancershares = [], [], [], [], [] # Initialize the share of people who get dysplasia vs cancer
 
     # Loop over genotypes
     for g in range(ng):
@@ -130,41 +133,52 @@ def plot_fig4():
         # To start find women who advance to cancer
         cancer_inds = hpu.true(hpu.n_binomial(tp, len(thisx)))  # Use binomial probabilities to determine the indices of those who get cancer
 
+
+        # Find women who only advance to PRECIN
+        indprecin = sc.findinds(peak_dysp < .1)[-1]
+        n_precin = len(sc.findinds(peak_dysp < .1))
+        precin_share = rv.cdf(thisx[indprecin])
+
         # Find women who only advance to CIN1
-        indcin1 = sc.findinds(peak_dysp < .33)[-1]
-        n_cin1 = len(sc.findinds(peak_dysp < .33))
-        cin1_share = rv.cdf(thisx[indcin1])
+        indcin1 = sc.findinds((peak_dysp > .1) & (peak_dysp < .4))[-1]
+        n_cin1 = len(sc.findinds((peak_dysp > .1) & (peak_dysp < .4)))
+        cin1_share = rv.cdf(thisx[indcin1]) - rv.cdf(thisx[indprecin])
 
         # See if there are women who advance to CIN2 and get their indices if so
-        if (peak_dysp > .33).any():
-            n_cin2 = len(sc.findinds((peak_dysp > .33) & (peak_dysp < .67)))
-            indcin2 = sc.findinds((peak_dysp > .33) & (peak_dysp < .67))[-1]
+        if (peak_dysp > .4).any():
+            n_cin2 = len(sc.findinds((peak_dysp > .4) & (peak_dysp < .7)))
+            indcin2 = sc.findinds((peak_dysp > .4) & (peak_dysp < .7))[-1]
         else:
             n_cin2 = 0
             indcin2 = indcin1
         cin2_share = rv.cdf(thisx[indcin2]) - rv.cdf(thisx[indcin1])
 
-        if (peak_dysp > .67).any():
-            n_cin3 = len(sc.findinds(peak_dysp > .67))
-            indcin3 = sc.findinds((peak_dysp > 0.67))[-1]  # Index after which people develop CIN3 (plus possibly cancer)
+        if (peak_dysp > .7).any():
+            n_cin3 = len(sc.findinds(peak_dysp > .7))
+            indcin3 = sc.findinds((peak_dysp > 0.7))[-1]  # Index after which people develop CIN3 (plus possibly cancer)
         else:
             n_cin3 = 0
             indcin3 = indcin2
         cin3_share = rv.cdf(thisx[indcin3]) - rv.cdf(thisx[indcin2])
 
-        n_cancer_cin1 = len(np.intersect1d(cancer_inds, sc.findinds(peak_dysp < .33)))
-        n_cancer_cin2 = len(np.intersect1d(cancer_inds, sc.findinds((peak_dysp > .33) & (peak_dysp < .67))))
-        n_cancer_cin3 = len(np.intersect1d(cancer_inds, sc.findinds((peak_dysp > 0.67))))
 
+        n_cancer_precin= len(np.intersect1d(cancer_inds, sc.findinds(peak_dysp < .1)))
+        n_cancer_cin1 = len(np.intersect1d(cancer_inds, sc.findinds((peak_dysp > .1) & (peak_dysp < .3))))
+        n_cancer_cin2 = len(np.intersect1d(cancer_inds, sc.findinds((peak_dysp > .4) & (peak_dysp < .7))))
+        n_cancer_cin3 = len(np.intersect1d(cancer_inds, sc.findinds((peak_dysp > 0.7))))
+
+        cancer_share_of_precins = n_cancer_precin/n_precin
         cancer_share_of_cin1s = n_cancer_cin1 / n_cin1  # Share of CIN1 women who get cancer
         cancer_share_of_cin2s = n_cancer_cin2 / n_cin2  # Share of CIN2 women who get cancer
         cancer_share_of_cin3s = n_cancer_cin3 / n_cin3  # Share of CIN3 women who get cancer
 
+        precin_share *= 1 - cancer_share_of_precins
         cin1_share *= 1 - cancer_share_of_cin1s
         cin2_share *= 1 - cancer_share_of_cin2s
         cin3_share *= 1 - cancer_share_of_cin3s
-        cancer_share = 1 - (cin1_share + cin2_share + cin3_share)
+        cancer_share = 1 - (precin_share + cin1_share + cin2_share + cin3_share)
 
+        precinshares.append(precin_share)
         cin1shares.append(cin1_share)
         cin2shares.append(cin2_share)
         cin3shares.append(cin3_share)
@@ -172,15 +186,16 @@ def plot_fig4():
 
     # Final plot
     bottom = np.zeros(ng)
-    all_shares = [cin1shares,
+    all_shares = [precinshares,
+                  cin1shares,
                   cin2shares,
                   cin3shares,
                   cancershares
                   ]
 
-    for gn, grade in enumerate(['HPV/CIN1', 'CIN2', 'CIN3', 'Cancer']):
+    for gn, grade in enumerate(['HPV', 'CIN1', 'CIN2', 'CIN3', 'Cancer']):
         ydata = np.array(all_shares[gn])
-        color = cmap[gn,:]
+        color = cmap[gn - 1, :] if gn > 0 else 'gray'
         ax['D'].bar(np.arange(1, ng + 1), ydata, color=color, bottom=bottom, label=grade)
         bottom = bottom + ydata
 

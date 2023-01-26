@@ -22,8 +22,8 @@ debug = 0
 resfolder = 'results'
 figfolder = 'figures'
 to_run = [
-    'run_scenarios',
-    # 'run_cea',
+    # 'run_scenarios',
+    'run_cea',
     # 'plot_scenarios',
 ]
 
