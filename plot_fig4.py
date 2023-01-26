@@ -41,22 +41,6 @@ def plot_fig4():
 
     # Get parameters
     genotype_pars = sim['genotype_pars']
-    genotype_pars['hpv16']['dur_dysp']['par1'] = 6
-    genotype_pars['hpv16']['dur_dysp']['par2'] = 9
-
-    genotype_pars['hpv18']['dur_dysp']['par1'] = 5
-    genotype_pars['hpv18']['dur_dysp']['par2'] = 9
-
-    genotype_pars['hrhpv']['dur_dysp']['par1'] = 7
-    genotype_pars['hrhpv']['dur_dysp']['par2'] = 10
-
-    genotype_pars['hpv16']['dysp_infl'] = 15
-    genotype_pars['hpv18']['dysp_infl'] = 16
-    genotype_pars['hrhpv']['dysp_infl'] = 17
-
-    genotype_pars['hpv16']['transform_prob'] = 0.00012
-    genotype_pars['hpv18']['transform_prob'] = 0.0002
-    genotype_pars['hrhpv']['transform_prob'] = 0.00032
 
     # Shorten names
     dur_dysp = [genotype_pars[genotype_map[g]]['dur_dysp'] for g in range(ng)]
