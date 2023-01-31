@@ -146,7 +146,7 @@ def plot_fig4():
         cin1_share = rv.cdf(thisx[indcin1]) - rv.cdf(thisx[indprecin])
 
         # See if there are women who advance to CIN2 and get their indices if so
-        if (peak_dysp > .4).any():
+        if (peak_dysp > clinical_cutoffs['cin1']).any():
             n_cin2 = len(sc.findinds((peak_dysp > clinical_cutoffs['cin1']) & (peak_dysp < clinical_cutoffs['cin2'])))
             indcin2 = sc.findinds((peak_dysp > clinical_cutoffs['cin1']) & (peak_dysp < clinical_cutoffs['cin2']))[-1]
         else:
@@ -154,7 +154,7 @@ def plot_fig4():
             indcin2 = indcin1
         cin2_share = rv.cdf(thisx[indcin2]) - rv.cdf(thisx[indcin1])
 
-        if (peak_dysp > .7).any():
+        if (peak_dysp > clinical_cutoffs['cin2']).any():
             n_cin3 = len(sc.findinds(peak_dysp > clinical_cutoffs['cin2']))
             indcin3 = sc.findinds((peak_dysp > clinical_cutoffs['cin2']))[-1]  # Index after which people develop CIN3 (plus possibly cancer)
         else:
