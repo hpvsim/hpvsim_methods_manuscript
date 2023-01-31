@@ -36,7 +36,7 @@ This script is used for running and plotting the results for use case 2.
 
 ## Installation
 
-If HPVsim is already installed (`pip install hpvsim`), no other dependencies are required. Alternatively, to install this code as a Python library, run `pip install -e .` (including the dot). This will install the latest version of each library (including HPVsim). You can also install with `pip install -e .[frozen]` to use the versions of libraries (including HPVsim) that were originally used for these analyses. 
+If HPVsim is already installed (`pip install hpvsim`), the only other required dependency is ``seaborn``. Alternatively, to install this code as a Python library, run `pip install -e .` (including the dot). This will install the latest version of each library (including HPVsim). You can also install with `pip install -e .[frozen]` to use the versions of libraries (including HPVsim) that were originally used for these analyses. 
 
 
 ## Usage
