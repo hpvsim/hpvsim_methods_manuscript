@@ -41,13 +41,7 @@ def plot_fig4():
 
     # Get parameters
     genotype_pars = sim['genotype_pars']
-
-    genotype_pars['hpv16']['sev_rate_sd'] = 0.05
-    genotype_pars['hpv18']['sev_rate_sd'] = 0.05
-    genotype_pars['hrhpv']['sev_rate_sd'] = 0.05
-
-    clinical_cutoffs = dict(precin=0.05, cin1=0.366, cin2=0.683)
-    clinical_cutoffs = dict(precin=0.1, cin1=0.4, cin2=0.7)
+    clinical_cutoffs = sim['clinical_cutoffs']
 
     # Shorten names
     dur_episomal = [genotype_pars[genotype_map[g]]['dur_episomal'] for g in range(ng)]
