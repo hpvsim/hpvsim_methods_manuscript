@@ -42,11 +42,18 @@ def plot_fig4():
     # Get parameters
     genotype_pars = sim['genotype_pars']
 
+    genotype_pars['hpv16']['sev_rate_sd'] = 0.05
+    genotype_pars['hpv18']['sev_rate_sd'] = 0.05
+    genotype_pars['hrhpv']['sev_rate_sd'] = 0.05
+
+    clinical_cutoffs = dict(precin=0.05, cin1=0.366, cin2=0.683)
+    clinical_cutoffs = dict(precin=0.1, cin1=0.4, cin2=0.7)
+
     # Shorten names
-    dur_dysp = [genotype_pars[genotype_map[g]]['dur_dysp'] for g in range(ng)]
-    dysp_rate = [genotype_pars[genotype_map[g]]['dysp_rate'] for g in range(ng)]
-    dysp_rate_sd = [genotype_pars[genotype_map[g]]['dysp_rate_sd'] for g in range(ng)]
-    dysp_infl = [genotype_pars[genotype_map[g]]['dysp_infl'] for g in range(ng)]
+    dur_episomal = [genotype_pars[genotype_map[g]]['dur_episomal'] for g in range(ng)]
+    sev_rate = [genotype_pars[genotype_map[g]]['sev_rate'] for g in range(ng)]
+    sev_rate_sd = [genotype_pars[genotype_map[g]]['sev_rate_sd'] for g in range(ng)]
+    sev_infl = [genotype_pars[genotype_map[g]]['sev_infl'] for g in range(ng)]
     transform_probs = [genotype_pars[genotype_map[g]]['transform_prob'] for g in range(ng)]
     ####################
     # Make figure, set fonts and colors
@@ -76,16 +83,16 @@ def plot_fig4():
 
     # Durations and severity of dysplasia
     for gi, gtype in enumerate(genotypes):
-        sigma, scale = ut.lognorm_params(dur_dysp[gi]['par1'], dur_dysp[gi]['par2'])
+        sigma, scale = ut.lognorm_params(dur_episomal[gi]['par1'], dur_episomal[gi]['par2'])
         rv = lognorm(sigma, 0, scale)
         ax['A'].plot(thisx, rv.pdf(thisx), color=colors[gi], lw=2, label=glabels[gi])
-        ax['C'].plot(thisx, ut.logf2(thisx, dysp_infl[gi], dysp_rate[gi]), color=colors[gi], lw=2, label=gtype.upper())
+        ax['C'].plot(thisx, ut.logf2(thisx, sev_infl[gi], sev_rate[gi]), color=colors[gi], lw=2, label=gtype.upper())
 
         for smpl in range(n_samples):
-            dr = hpu.sample(dist='normal_pos', par1=dysp_rate[gi], par2=dysp_rate_sd[gi])
-            ax['C'].plot(thisx, hpu.logf2(thisx, dysp_infl[gi], dr), color=colors[gi], lw=1, alpha=0.5, label=gtype.upper())
+            dr = hpu.sample(dist='normal_pos', par1=sev_rate[gi], par2=sev_rate_sd[gi])
+            ax['C'].plot(thisx, hpu.logf2(thisx, sev_infl[gi], dr), color=colors[gi], lw=1, alpha=0.5, label=gtype.upper())
 
-        tp = cum_transform_prob(transform_probs[gi], thisx, hpu.logf2(thisx, dysp_infl[gi], dysp_rate[gi]))
+        tp = cum_transform_prob(transform_probs[gi], thisx, hpu.logf2(thisx, sev_infl[gi], sev_rate[gi]))
         ax['B'].plot(thisx, tp, color=colors[gi], label=gtype.upper())
 
     ax['A'].set_ylabel("")
@@ -94,19 +101,19 @@ def plot_fig4():
     ax['A'].set_ylabel("Density")
     ax['A'].legend()
 
-    ax['C'].set_ylabel("Degree of dysplasia")
+    ax['C'].set_ylabel("Severity of infection")
     ax['C'].set_xlabel("Duration of infection (years)")
     ax['C'].set_ylim([0,1])
     ax['C'].grid()
 
-    ax['C'].axhline(y=0.1, ls=':', c='k')
-    ax['C'].axhline(y=0.4, ls=':', c='k')
-    ax['C'].axhline(y=0.7, ls=':', c='k')
-    ax['C'].axhspan(0, 0.1, color='gray', alpha=.4)
-    ax['C'].axhspan(0.1, 0.4, color=cmap[0], alpha=.4)
-    ax['C'].axhspan(0.4, 0.7, color=cmap[1], alpha=.4)
-    ax['C'].axhspan(0.7, 1.0, color=cmap[2], alpha=.4)
-    ax['C'].text(-0.3, 0.05, 'Pre\nCIN', rotation=90)
+    ax['C'].axhline(y=clinical_cutoffs['precin'], ls=':', c='k')
+    ax['C'].axhline(y=clinical_cutoffs['cin1'], ls=':', c='k')
+    ax['C'].axhline(y=clinical_cutoffs['cin2'], ls=':', c='k')
+    ax['C'].axhspan(0, clinical_cutoffs['precin'], color='gray', alpha=.4)
+    ax['C'].axhspan(clinical_cutoffs['precin'], clinical_cutoffs['cin1'], color=cmap[0], alpha=.4)
+    ax['C'].axhspan(clinical_cutoffs['cin1'], clinical_cutoffs['cin2'], color=cmap[1], alpha=.4)
+    ax['C'].axhspan(clinical_cutoffs['cin2'], 1.0, color=cmap[2], alpha=.4)
+    ax['C'].text(-0.3, 0.02, 'Pre-\nCIN', rotation=90)
     ax['C'].text(-0.3, 0.2, 'CIN1', rotation=90)
     ax['C'].text(-0.3, 0.5, 'CIN2', rotation=90)
     ax['C'].text(-0.3, 0.8, 'CIN3', rotation=90)
@@ -125,47 +132,47 @@ def plot_fig4():
     # Loop over genotypes
     for g in range(ng):
         # First, determine the outcomes for women
-        sigma, scale = ut.lognorm_params(dur_dysp[g]['par1'], dur_dysp[g]['par2']) # Calculate parameters in the format expected by scipy
+        sigma, scale = ut.lognorm_params(dur_episomal[g]['par1'], dur_episomal[g]['par2']) # Calculate parameters in the format expected by scipy
         rv = lognorm(sigma, 0, scale) # Create scipy rv object
-        tp = cum_transform_prob(transform_probs[g], thisx, hpu.logf2(thisx, dysp_infl[g], dysp_rate[g]))
-        peak_dysp = hpu.logf2(thisx, dysp_infl[g], dysp_rate[g])  # Calculate peak dysplasia
+        tp = cum_transform_prob(transform_probs[g], thisx, hpu.logf2(thisx, sev_infl[g], sev_rate[g]))
+        peak_dysp = hpu.logf2(thisx, sev_infl[g], sev_rate[g])  # Calculate peak dysplasia
 
         # To start find women who advance to cancer
         cancer_inds = hpu.true(hpu.n_binomial(tp, len(thisx)))  # Use binomial probabilities to determine the indices of those who get cancer
 
 
         # Find women who only advance to PRECIN
-        indprecin = sc.findinds(peak_dysp < .1)[-1]
-        n_precin = len(sc.findinds(peak_dysp < .1))
+        indprecin = sc.findinds(peak_dysp < clinical_cutoffs['precin'])[-1]
+        n_precin = len(sc.findinds(peak_dysp < clinical_cutoffs['precin']))
         precin_share = rv.cdf(thisx[indprecin])
 
         # Find women who only advance to CIN1
-        indcin1 = sc.findinds((peak_dysp > .1) & (peak_dysp < .4))[-1]
-        n_cin1 = len(sc.findinds((peak_dysp > .1) & (peak_dysp < .4)))
+        indcin1 = sc.findinds((peak_dysp > clinical_cutoffs['precin']) & (peak_dysp < clinical_cutoffs['cin1']))[-1]
+        n_cin1 = len(sc.findinds((peak_dysp > clinical_cutoffs['precin']) & (peak_dysp < clinical_cutoffs['cin1'])))
         cin1_share = rv.cdf(thisx[indcin1]) - rv.cdf(thisx[indprecin])
 
         # See if there are women who advance to CIN2 and get their indices if so
         if (peak_dysp > .4).any():
-            n_cin2 = len(sc.findinds((peak_dysp > .4) & (peak_dysp < .7)))
-            indcin2 = sc.findinds((peak_dysp > .4) & (peak_dysp < .7))[-1]
+            n_cin2 = len(sc.findinds((peak_dysp > clinical_cutoffs['cin1']) & (peak_dysp < clinical_cutoffs['cin2'])))
+            indcin2 = sc.findinds((peak_dysp > clinical_cutoffs['cin1']) & (peak_dysp < clinical_cutoffs['cin2']))[-1]
         else:
             n_cin2 = 0
             indcin2 = indcin1
         cin2_share = rv.cdf(thisx[indcin2]) - rv.cdf(thisx[indcin1])
 
         if (peak_dysp > .7).any():
-            n_cin3 = len(sc.findinds(peak_dysp > .7))
-            indcin3 = sc.findinds((peak_dysp > 0.7))[-1]  # Index after which people develop CIN3 (plus possibly cancer)
+            n_cin3 = len(sc.findinds(peak_dysp > clinical_cutoffs['cin2']))
+            indcin3 = sc.findinds((peak_dysp > clinical_cutoffs['cin2']))[-1]  # Index after which people develop CIN3 (plus possibly cancer)
         else:
             n_cin3 = 0
             indcin3 = indcin2
         cin3_share = rv.cdf(thisx[indcin3]) - rv.cdf(thisx[indcin2])
 
 
-        n_cancer_precin= len(np.intersect1d(cancer_inds, sc.findinds(peak_dysp < .1)))
-        n_cancer_cin1 = len(np.intersect1d(cancer_inds, sc.findinds((peak_dysp > .1) & (peak_dysp < .3))))
-        n_cancer_cin2 = len(np.intersect1d(cancer_inds, sc.findinds((peak_dysp > .4) & (peak_dysp < .7))))
-        n_cancer_cin3 = len(np.intersect1d(cancer_inds, sc.findinds((peak_dysp > 0.7))))
+        n_cancer_precin= len(np.intersect1d(cancer_inds, sc.findinds(peak_dysp < clinical_cutoffs['precin'])))
+        n_cancer_cin1 = len(np.intersect1d(cancer_inds, sc.findinds((peak_dysp > clinical_cutoffs['precin']) & (peak_dysp < clinical_cutoffs['cin1']))))
+        n_cancer_cin2 = len(np.intersect1d(cancer_inds, sc.findinds((peak_dysp > clinical_cutoffs['cin1']) & (peak_dysp < clinical_cutoffs['cin2']))))
+        n_cancer_cin3 = len(np.intersect1d(cancer_inds, sc.findinds((peak_dysp > clinical_cutoffs['cin2']))))
 
         cancer_share_of_precins = n_cancer_precin/n_precin
         cancer_share_of_cin1s = n_cancer_cin1 / n_cin1  # Share of CIN1 women who get cancer
@@ -193,7 +200,7 @@ def plot_fig4():
                   cancershares
                   ]
 
-    for gn, grade in enumerate(['HPV', 'CIN1', 'CIN2', 'CIN3', 'Cancer']):
+    for gn, grade in enumerate(['Pre-CIN', 'CIN1', 'CIN2', 'CIN3', 'Cancer']):
         ydata = np.array(all_shares[gn])
         color = cmap[gn - 1, :] if gn > 0 else 'gray'
         ax['D'].bar(np.arange(1, ng + 1), ydata, color=color, bottom=bottom, label=grade)
