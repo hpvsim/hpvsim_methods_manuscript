@@ -16,8 +16,6 @@ To run this script, uncomment the sections you wish to run from the list to_run
 """
 
 import hpvsim as hpv
-import hpvsim.defaults as hpd
-import hpvsim.plotting as hppl
 import numpy as np
 import sciris as sc
 import pandas as pd

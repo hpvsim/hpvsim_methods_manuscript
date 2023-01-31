@@ -536,24 +536,6 @@ def run_cea():
     fig_name = f'{figfolder}/ICER.png'
     sc.savefig(fig_name, dpi=100)
 
-    # Print results
-    # print("Total costs are:")
-    # print(f"Algorithm 1: {total_costs['algo1']}")
-    # print(f"Algorithm 2: {total_costs['algo2']}")
-    # print(f"Algorithm 3: {total_costs['algo3']}")
-    # print(f"Algorithm 5: {total_costs['algo5']}")
-    #
-    # print("Cost per DALY averted")
-    # print(f"Algorithm 1: {icers['algo1']}")
-    # print(f"Algorithm 2: {icers['algo2']}")
-    # print(f"Algorithm 3: {icers['algo3']}")
-    # print(f"Algorithm 5: {icers['algo5']}")
-    #
-    # print("NNTs:")
-    # print(f"Algorithm 1: {total_ablations['algo1']/cancer_redux['algo1']}")
-    # print(f"Algorithm 2: {total_ablations['algo2']/cancer_redux['algo2']}")
-    # print(f"Algorithm 3: {total_ablations['algo3']/cancer_redux['algo3']}")
-    # print(f"Algorithm 5: {total_ablations['algo5']/cancer_redux['algo5']}")
 
 
 #%% Run as a script
@@ -574,8 +556,6 @@ if __name__ == '__main__':
 
         to_plot = {
         'Age standardized cancer incidence': ['asr_cancer_incidence'],
-        # 'Cancer cases': ['cancers'],
-        # 'Cancer deaths': ['cancer_deaths'],
         'Treatments': ['new_cin_treatments'],
         }
         scens.plot(to_plot=to_plot, n_cols=1, fig_path=f'{figfolder}/uc1_plot.png', do_save=True)
