@@ -2,7 +2,7 @@
 
 This repository includes the code for reproducing the figures and analyses of the HPVsim methods manuscript. The original scientific paper describing HPVsim is available at http://paper.hpvsim.org. The recommended citation is:
 
-    **HPVsim: An agent-based model of HPV transmission and cervical disease**. Stuart RM, Cohen JC, Kerr CC,Abeysuriya RG, Zimmermann M, Rao DW, Boudreau MC, Klein DJ (2021).
+> **HPVsim: An agent-based model of HPV transmission and cervical disease**. Stuart RM, Cohen JC, Kerr CC, Abeysuriya RG, Zimmermann M, Rao DW, Boudreau MC, Klein DJ (2023).
 
 ## Organization
 
