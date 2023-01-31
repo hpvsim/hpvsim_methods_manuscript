@@ -1,4 +1,4 @@
-# HPVsim methods manuscript repository
+# HPVsim methods manuscript
 
 This repository includes the code for reproducing the figures and analyses of the HPVsim methods manuscript. The original scientific paper describing HPVsim is available at http://paper.hpvsim.org. The recommended citation is:
 
