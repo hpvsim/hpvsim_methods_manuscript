@@ -107,9 +107,8 @@ def plot_fig4():
     ax['C'].axhspan(clinical_cutoffs['precin'], clinical_cutoffs['cin1'], color=cmap[0], alpha=.4)
     ax['C'].axhspan(clinical_cutoffs['cin1'], clinical_cutoffs['cin2'], color=cmap[1], alpha=.4)
     ax['C'].axhspan(clinical_cutoffs['cin2'], 1.0, color=cmap[2], alpha=.4)
-    ax['C'].text(-0.3, 0.02, 'Pre-\nCIN', rotation=90)
-    ax['C'].text(-0.3, 0.2, 'CIN1', rotation=90)
-    ax['C'].text(-0.3, 0.5, 'CIN2', rotation=90)
+    ax['C'].text(-0.3, 0.15, 'CIN1', rotation=90)
+    ax['C'].text(-0.3, 0.48, 'CIN2', rotation=90)
     ax['C'].text(-0.3, 0.8, 'CIN3', rotation=90)
 
     ax['B'].grid()
