@@ -1,7 +1,7 @@
 """
-Utilities for running scripts in the methods manuscript repo
+Utilities for running scripts in the HPVsim methods manuscript repo
 """
-import hpvsim as hpv
+
 import numpy as np
 import sciris as sc
 

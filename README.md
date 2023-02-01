@@ -18,9 +18,6 @@ There are separate scripts for running and plotting each figure and the use case
 #### `plot_fig4.py` 
 - This script can be used to reproduce Figure 4.
 
-#### `plot_fig5.py` 
-- This script can be used to reproduce Figure 5.
-
 #### `use_case_1.py`
 This script is used for running and plotting the results for use case 1.
 - The `run_scenarios` section is computationally intensive and typically run on virtual machines.
