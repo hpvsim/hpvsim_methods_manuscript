@@ -1,7 +1,7 @@
 """
-Utilities for running scripts in the methods manuscript repo
+Utilities for running scripts in the HPVsim methods manuscript repo
 """
-import hpvsim as hpv
+
 import numpy as np
 import sciris as sc
 
@@ -12,7 +12,7 @@ figfolder = 'figures'
 # Define utils
 def set_font(size=None, font='Libertinus Sans'):
     ''' Set a custom font '''
-    sc.fonts(add=sc.thisdir(aspath=True) / 'assets' / 'LibertinusSans-Regular.otf')
+    sc.fonts(add=sc.thispath() / 'assets' / 'LibertinusSans-Regular.otf')
     sc.options(font=font, fontsize=size)
     return
 

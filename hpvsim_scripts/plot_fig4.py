@@ -1,15 +1,16 @@
 """
 This script produces figure 4 of the HPVsim methods paper, showing the natural history
 """
-import hpvsim as hpv
-import hpvsim.utils as hpu
-import pylab as pl
-import pandas as pd
-from scipy.stats import lognorm, norm
+
+# Standard imports
 import numpy as np
+from scipy.stats import lognorm
 import sciris as sc
+import pylab as pl
+
+# HPVsim and local imports
+import hpvsim as hpv
 import utils as ut
-import seaborn as sns
 
 
 #%% Plotting function
@@ -83,10 +84,10 @@ def plot_fig4():
         ax['C'].plot(thisx, ut.logf2(thisx, sev_infl[gi], sev_rate[gi]), color=colors[gi], lw=2, label=gtype.upper())
 
         for smpl in range(n_samples):
-            dr = hpu.sample(dist='normal_pos', par1=sev_rate[gi], par2=sev_rate_sd[gi])
-            ax['C'].plot(thisx, hpu.logf2(thisx, sev_infl[gi], dr), color=colors[gi], lw=1, alpha=0.5, label=gtype.upper())
+            dr = hpv.sample(dist='normal_pos', par1=sev_rate[gi], par2=sev_rate_sd[gi])
+            ax['C'].plot(thisx, ut.logf2(thisx, sev_infl[gi], dr), color=colors[gi], lw=1, alpha=0.5, label=gtype.upper())
 
-        tp = cum_transform_prob(transform_probs[gi], thisx, hpu.logf2(thisx, sev_infl[gi], sev_rate[gi]))
+        tp = cum_transform_prob(transform_probs[gi], thisx, ut.logf2(thisx, sev_infl[gi], sev_rate[gi]))
         ax['B'].plot(thisx, tp, color=colors[gi], label=gtype.upper())
 
     ax['A'].set_ylabel("")
@@ -127,11 +128,11 @@ def plot_fig4():
         # First, determine the outcomes for women
         sigma, scale = ut.lognorm_params(dur_episomal[g]['par1'], dur_episomal[g]['par2']) # Calculate parameters in the format expected by scipy
         rv = lognorm(sigma, 0, scale) # Create scipy rv object
-        tp = cum_transform_prob(transform_probs[g], thisx, hpu.logf2(thisx, sev_infl[g], sev_rate[g]))
-        peak_dysp = hpu.logf2(thisx, sev_infl[g], sev_rate[g])  # Calculate peak dysplasia
+        tp = cum_transform_prob(transform_probs[g], thisx, ut.logf2(thisx, sev_infl[g], sev_rate[g]))
+        peak_dysp = ut.logf2(thisx, sev_infl[g], sev_rate[g])  # Calculate peak dysplasia
 
         # To start find women who advance to cancer
-        cancer_inds = hpu.true(hpu.n_binomial(tp, len(thisx)))  # Use binomial probabilities to determine the indices of those who get cancer
+        cancer_inds = hpv.true(hpv.n_binomial(tp, len(thisx)))  # Use binomial probabilities to determine the indices of those who get cancer
 
 
         # Find women who only advance to PRECIN
@@ -203,17 +204,17 @@ def plot_fig4():
     ax['D'].set_xticklabels(glabels)
     ax['D'].set_ylabel("")
     ax['D'].set_ylabel("Distribution of outcomes")
-    # ax['E'].legend(bbox_to_anchor=(1.1, 1))
     handles, labels = ax['D'].get_legend_handles_labels()
     ax['D'].legend(handles, labels, frameon=True, loc='lower right')
 
-    fs=40
+    fs = 40
     pl.figtext(0.02, 0.955, 'A', fontweight='bold', fontsize=fs)
     pl.figtext(0.51, 0.955, 'C', fontweight='bold', fontsize=fs)
     pl.figtext(0.02, 0.47, 'B', fontweight='bold', fontsize=fs)
     pl.figtext(0.51, 0.47, 'D', fontweight='bold', fontsize=fs)
     fig.tight_layout()
     pl.savefig(f"{ut.figfolder}/fig4.png", dpi=100)
+    pl.show()
 
 
 #%% Run as a script
