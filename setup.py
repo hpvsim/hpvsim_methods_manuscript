@@ -20,7 +20,7 @@ CLASSIFIERS = [
 
 setup(
     name="hpvsim_scripts",
-    version="1.2.1",
+    version="1.0.0",
     author="Robyn Stuart, Jamie Cohen, Cliff Kerr, Romesh Abeysuriya, Mariah Boudreau, and Dan Klein",
     author_email="info@hpvsim.org",
     description="Code for the 'HPVsim: An agent-based model of HPV transmission and cervical disease' paper",
