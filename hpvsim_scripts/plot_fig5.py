@@ -1,15 +1,15 @@
 """
 This script produces figure 5 of the HPVsim methods paper, showing the natural history
 """
-import hpvsim as hpv
-import hpvsim.utils as hpu
+
+
 import pylab as pl
 import pandas as pd
-from scipy.stats import lognorm
 import numpy as np
 import sciris as sc
-import utils as ut
 import seaborn as sns
+import hpvsim as hpv
+import hpvsim.utils as hpu
 
 class prop_exposed(hpv.Analyzer):
     ''' Store proportion of agents exposed '''
@@ -203,7 +203,7 @@ def plot_fig5(calib_pars=None):
         dfs += gt_df
     dt_df2 = pd.concat(dfs)
 
-    ut.set_font(size=20)
+    hpu.set_font(size=20)
     f, axes = pl.subplots(1, 2, figsize=(16, 10))
     ax = axes[0]
     sns.violinplot(data=dt_df, x='var', y='age', hue='genotype', ax=ax)
@@ -219,14 +219,14 @@ def plot_fig5(calib_pars=None):
     ax.set_xticklabels(['CIN1', 'CIN2', 'CIN3', 'TOTAL'])
     sc.SIticks(ax)
     f.tight_layout()
-    pl.savefig(f"{ut.figfolder}/fig5.png", dpi=100)
+    pl.savefig(f"{hpu.figfolder}/fig5.png", dpi=100)
 
 
 
 #%% Run as a script
 if __name__ == '__main__':
 
-    file = f'nigeria_pars.obj'
+    file = sc.thispath() / 'nigeria_pars.obj'
     calib_pars = sc.loadobj(file)
 
     plot_fig5(calib_pars=calib_pars)
