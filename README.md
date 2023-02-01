@@ -20,8 +20,8 @@ There are separate scripts for running and plotting each figure and the use case
 
 #### `use_case_1.py`
 This script is used for running and plotting the results for use case 1.
-- The `run_scenarios` section is computationally intensive and typically run on virtual machines.
- - `plot_scenarios` and `run_cea` creates plots of the use case 1 outputs.
+- The `run_scenarios` section takes 30-40 minutes to run.
+ - `plot_scenarios` and `run_cea` creates plots of the use case 1 outputs and run in seconds.
 
 #### `use_case_2.py`
 This script is used for running and plotting the results for use case 2.
