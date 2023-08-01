@@ -10,6 +10,7 @@ import pylab as pl
 
 # HPVsim and local imports
 import hpvsim as hpv
+import hpvsim.parameters as hppar
 import utils as ut
 
 
@@ -43,12 +44,13 @@ def plot_fig4():
     # Get parameters
     genotype_pars = sim['genotype_pars']
     clinical_cutoffs = sim['clinical_cutoffs']
+    clinical_cutoffs['precin'] = 0.03
 
     # Shorten names
     dur_episomal = [genotype_pars[genotype_map[g]]['dur_episomal'] for g in range(ng)]
-    sev_rate = [genotype_pars[genotype_map[g]]['sev_rate'] for g in range(ng)]
-    sev_rate_sd = [genotype_pars[genotype_map[g]]['sev_rate_sd'] for g in range(ng)]
-    sev_infl = [genotype_pars[genotype_map[g]]['sev_infl'] for g in range(ng)]
+    # sev_rate = [genotype_pars[genotype_map[g]]['sev_fn']['k'] for g in range(ng)]
+    # sev_rate_sd = [genotype_pars[genotype_map[g]]['sev_rate_sd'] for g in range(ng)]
+    sev_fn = [genotype_pars[genotype_map[g]]['sev_fn'] for g in range(ng)]
     transform_probs = [genotype_pars[genotype_map[g]]['transform_prob'] for g in range(ng)]
     ####################
     # Make figure, set fonts and colors
@@ -81,13 +83,13 @@ def plot_fig4():
         sigma, scale = ut.lognorm_params(dur_episomal[gi]['par1'], dur_episomal[gi]['par2'])
         rv = lognorm(sigma, 0, scale)
         ax['A'].plot(thisx, rv.pdf(thisx), color=colors[gi], lw=2, label=glabels[gi])
-        ax['C'].plot(thisx, ut.logf2(thisx, sev_infl[gi], sev_rate[gi]), color=colors[gi], lw=2, label=gtype.upper())
+        ax['C'].plot(thisx, hppar.compute_severity(thisx, pars=sev_fn[gi]), color=colors[gi], lw=2, label=gtype.upper())
 
-        for smpl in range(n_samples):
-            dr = hpv.sample(dist='normal_pos', par1=sev_rate[gi], par2=sev_rate_sd[gi])
-            ax['C'].plot(thisx, ut.logf2(thisx, sev_infl[gi], dr), color=colors[gi], lw=1, alpha=0.5, label=gtype.upper())
+        # for smpl in range(n_samples):
+        #     dr = hpv.sample(dist='normal_pos', par1=sev_rate[gi], par2=sev_rate_sd[gi])
+        #     ax['C'].plot(thisx, ut.logf2(thisx, sev_infl[gi], dr), color=colors[gi], lw=1, alpha=0.5, label=gtype.upper())
 
-        tp = cum_transform_prob(transform_probs[gi], thisx, ut.logf2(thisx, sev_infl[gi], sev_rate[gi]))
+        tp = cum_transform_prob(transform_probs[gi], thisx, hppar.compute_severity(thisx, pars=sev_fn[gi]))
         ax['B'].plot(thisx, tp, color=colors[gi], label=gtype.upper())
 
     ax['A'].set_ylabel("")
@@ -128,8 +130,8 @@ def plot_fig4():
         # First, determine the outcomes for women
         sigma, scale = ut.lognorm_params(dur_episomal[g]['par1'], dur_episomal[g]['par2']) # Calculate parameters in the format expected by scipy
         rv = lognorm(sigma, 0, scale) # Create scipy rv object
-        tp = cum_transform_prob(transform_probs[g], thisx, ut.logf2(thisx, sev_infl[g], sev_rate[g]))
-        peak_dysp = ut.logf2(thisx, sev_infl[g], sev_rate[g])  # Calculate peak dysplasia
+        tp = cum_transform_prob(transform_probs[g], thisx, hppar.compute_severity(thisx, pars=sev_fn[g]))
+        peak_dysp = hppar.compute_severity(thisx, pars=sev_fn[g])  # Calculate peak dysplasia
 
         # To start find women who advance to cancer
         cancer_inds = hpv.true(hpv.n_binomial(tp, len(thisx)))  # Use binomial probabilities to determine the indices of those who get cancer
@@ -213,7 +215,7 @@ def plot_fig4():
     pl.figtext(0.02, 0.47, 'B', fontweight='bold', fontsize=fs)
     pl.figtext(0.51, 0.47, 'D', fontweight='bold', fontsize=fs)
     fig.tight_layout()
-    pl.savefig(f"{ut.figfolder}/fig4.png", dpi=100)
+    pl.savefig(f"../{ut.figfolder}/fig4.png", dpi=100)
     pl.show()
 
 
