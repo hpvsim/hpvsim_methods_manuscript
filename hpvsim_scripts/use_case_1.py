@@ -22,8 +22,8 @@ debug = 0
 resfolder = 'results'
 figfolder = 'figures'
 to_run = [
-    'run_scenarios',
-    # 'run_cea',
+    # 'run_scenarios',
+    'run_cea',
     # 'plot_scenarios',
 ]
 
@@ -344,12 +344,12 @@ def run_cea():
     # Extract number of products used in screening, triage, and treatment from each scenario
     s0 = scens.sims[0][0]
     s1 = scens.sims[1][0] # algo1
-    # s2 = scens.sims[2][0] # algo2
-    # s3 = scens.sims[3][0] # algo3
-    # s4 = scens.sims[4][0] # algo4
-    # s5 = scens.sims[5][0] # algo5
-    # s6 = scens.sims[6][0] # algo6
-    # s7 = scens.sims[7][0] # algo7
+    s2 = scens.sims[2][0] # algo2
+    s3 = scens.sims[3][0] # algo3
+    s4 = scens.sims[4][0] # algo4
+    s5 = scens.sims[5][0] # algo5
+    s6 = scens.sims[6][0] # algo6
+    s7 = scens.sims[7][0] # algo7
     si = sc.findinds(s2.res_yearvec, 2025)[1]
 
     dalys = {}
