@@ -37,7 +37,7 @@ def make_sim(seed=0, debug=0):
         n_agents        = [50e3,5e3][debug],
         dt              = [0.25,1.0][debug],
         start           = [1960,2000][debug],
-        burnin          = [70,0][debug],
+        burnin          = [60,0][debug],
         end             = 2060,
         ms_agent_ratio  = 100,
         rand_seed       = seed,
