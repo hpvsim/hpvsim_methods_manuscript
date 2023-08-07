@@ -350,7 +350,7 @@ def run_cea():
     s5 = scens.sims[5][0] # algo5
     s6 = scens.sims[6][0] # algo6
     s7 = scens.sims[7][0] # algo7
-    si = sc.findinds(s2.res_yearvec, 2025)[1]
+    si = sc.findinds(s2.res_yearvec, 2025)[-1]
 
     dalys = {}
     for sim, scen in zip([s0, s1, s2, s3, s4, s5, s6, s7],['baseline', 'algo1', 'algo2', 'algo3', 'algo4', 'algo5', 'algo6', 'algo7']):
