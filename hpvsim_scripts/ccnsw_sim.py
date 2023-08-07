@@ -92,8 +92,7 @@ age_range = [15, 20, 25, 30, 35, 40, 45, 50]
 colors = sc.vectocolor(age_range)
 sc.options(fontsize=15)
 for i, age in enumerate(age_range):
-    cin1_probs =\
-        []
+    cin1_probs = []
     cin2_probs = []
     cin3_probs = []
     cancer_probs = []
