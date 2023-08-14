@@ -23,8 +23,8 @@ resfolder = 'results'
 figfolder = 'figures'
 to_run = [
     # 'run_scenarios',
-    # 'run_cea',
-    'plot_scenarios',
+    'run_cea',
+    # 'plot_scenarios',
 ]
 
 
@@ -339,7 +339,7 @@ def run_scens(sim=None, seed=0, n_seeds=3, meta=None, verbose=0, debug=debug):
 
 
 def run_cea():
-    scens = sc.loadobj(f'{resfolder}/uc1_scens.obj')
+    scens = sc.loadobj(f'../{resfolder}/uc1_scens.obj')
 
     # Extract number of products used in screening, triage, and treatment from each scenario
     s0 = scens.sims[0][0]
@@ -517,7 +517,7 @@ def run_cea():
         'algo7': 'Algorithm 7',
     }
     ut.set_font(size=20)
-    f, ax = pl.subplots(figsize=(10, 10))
+    f, ax = pl.subplots(figsize=(12, 7))
 
     colors = sc.gridcolors(10)
     efficiency_data.plot(ax=ax, kind='line', x='DALYs averted', y='Costs', color='black',
