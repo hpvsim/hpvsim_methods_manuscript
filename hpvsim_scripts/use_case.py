@@ -23,21 +23,21 @@ resfolder = 'results'
 figfolder = 'figures'
 to_run = [
     # 'run_scenarios',
-    # 'run_cea',
+    'run_cea',
     # 'plot_scenarios',
 ]
 
 
 #%% Define functions to run
-def make_sim(seed=0):
+def make_sim(seed=0, debug=0):
     ''' Make a single sim '''
 
     # Parameters
     pars = dict(
         n_agents        = [50e3,5e3][debug],
         dt              = [0.25,1.0][debug],
-        start           = [1950,2000][debug],
-        burnin          = 70,
+        start           = [1960,2000][debug],
+        burnin          = [60,0][debug],
         end             = 2060,
         ms_agent_ratio  = 100,
         rand_seed       = seed,
@@ -59,7 +59,7 @@ def run_sim(verbose=None, seed=0):
 def run_scens(sim=None, seed=0, n_seeds=3, meta=None, verbose=0, debug=debug):
     ''' Run scenarios for all specified settings '''
 
-    if sim is None: sim = make_sim(seed=seed)
+    if sim is None: sim = make_sim(seed=seed, debug=debug)
 
     # Shared parameters
     primary_screen_prob = 0.2
@@ -333,13 +333,13 @@ def run_scens(sim=None, seed=0, n_seeds=3, meta=None, verbose=0, debug=debug):
         'algo7':    {'name': 'Algorithm 7', 'pars': {'interventions': algo7}},
     }
     scens = hpv.Scenarios(sim=sim, metapars={'n_runs': n_seeds}, scenarios=scenarios)
-    scens.run()
+    scens.run(debug=debug)
 
     return scens
 
 
 def run_cea():
-    scens = sc.loadobj(f'{resfolder}/uc1_scens.obj')
+    scens = sc.loadobj(f'../{resfolder}/uc1_scens.obj')
 
     # Extract number of products used in screening, triage, and treatment from each scenario
     s0 = scens.sims[0][0]
@@ -350,7 +350,7 @@ def run_cea():
     s5 = scens.sims[5][0] # algo5
     s6 = scens.sims[6][0] # algo6
     s7 = scens.sims[7][0] # algo7
-    si = sc.findinds(s2.res_yearvec, 2025)[0]
+    si = sc.findinds(s2.res_yearvec, 2025)[-1]
 
     dalys = {}
     for sim, scen in zip([s0, s1, s2, s3, s4, s5, s6, s7],['baseline', 'algo1', 'algo2', 'algo3', 'algo4', 'algo5', 'algo6', 'algo7']):
@@ -517,7 +517,7 @@ def run_cea():
         'algo7': 'Algorithm 7',
     }
     ut.set_font(size=20)
-    f, ax = pl.subplots(figsize=(10, 10))
+    f, ax = pl.subplots(figsize=(12, 7))
 
     colors = sc.gridcolors(10)
     efficiency_data.plot(ax=ax, kind='line', x='DALYs averted', y='Costs', color='black',
@@ -533,7 +533,7 @@ def run_cea():
     ax.legend(fancybox=True)  # , title='Screening method')
     sc.SIticks(ax)
     f.tight_layout()
-    fig_name = f'{figfolder}/ICER.png'
+    fig_name = f'../{figfolder}/ICER.png'
     sc.savefig(fig_name, dpi=100)
 
 
@@ -543,7 +543,7 @@ if __name__ == '__main__':
 
     # Run scenarios
     if 'run_scenarios' in to_run:
-        scens = run_scens(verbose=0.1)
+        scens = run_scens(verbose=0.1, debug=debug)
         sc.saveobj(f'{resfolder}/uc1_scens.obj', scens)
 
     # Run cost-effectiveness analyses
@@ -558,30 +558,7 @@ if __name__ == '__main__':
         'Age standardized cancer incidence': ['asr_cancer_incidence'],
         'Treatments': ['new_cin_treatments'],
         }
-        scens.plot(to_plot=to_plot, n_cols=1, fig_path=f'{figfolder}/uc1_plot.png', do_save=True)
+        scens.plot(to_plot=to_plot, n_cols=1, fig_path=f'../{figfolder}/uc1_plot.png', do_save=True)
 
     print('Done.')
 
-    # Define the parameters and the baseline sim
-    pars = dict(
-        n_agents=20e3,  # Population size
-        n_years=35,  # Number of years to simulate
-        verbose=0,  # Don't print details of the run
-        rand_seed=2,  # Set a non-default seed
-        genotypes=[16, 18],  # Include the two genotypes of greatest general interest
-    )
-    sim = hpv.Sim(pars, label='Baseline')
-
-    # Define the intervention
-    vx = hpv.routine_vx(prob=0.6, start_year=2015, age_range=[9, 10], product='bivalent')
-
-    # Create scenarios with and without vaccination
-    scenarios = {
-        'baseline': {'name': 'Baseline','pars': {}},
-        'vax':      {'name': 'With vaccination', 'pars': {'interventions': [vx]}},
-    }
-    scens = hpv.Scenarios(sim=sim, metapars={'n_runs': 3}, scenarios=scenarios)
-
-    # Run and plot
-    scens.run()
-    scens.plot('hpv_incidence', fontsize=24)

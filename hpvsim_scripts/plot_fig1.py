@@ -21,8 +21,8 @@ def plot_fig1(simkw=None, plotkw=None):
 if __name__ == '__main__':
 
     sim = plot_fig1(
-        simkw=dict(n_agents=50e3, start=1950, end=2020, ms_agent_ratio=100),
-        plotkw=dict(do_save=True, fig_path=f'{ut.figfolder}/fig1.png')
+        simkw=dict(location='india', n_agents=50e3, start=1950, end=2020, ms_agent_ratio=100),
+        plotkw=dict(do_save=True, fig_path=f'../{ut.figfolder}/fig1.png')
     )
 
     print('Done.')
