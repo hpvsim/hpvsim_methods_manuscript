@@ -8,7 +8,7 @@ import sciris as sc
 import matplotlib.pyplot as plt
 
 # %% Run configurations
-debug = 1
+debug = 0
 resfolder = 'results'
 figfolder = 'figures'
 
