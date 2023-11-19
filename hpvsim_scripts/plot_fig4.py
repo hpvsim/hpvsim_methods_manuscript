@@ -3,7 +3,7 @@ import pylab as pl
 import hpvsim as hpv
 import utils as ut
 
-rerun = True
+rerun = False
 filename = '../results/multiscale_test.df'
 
 T = sc.timer()
@@ -71,7 +71,7 @@ print(gs)
 sc.heading('CoVs')
 print(gc)
 
-quantity = ['infs', 'cancers', 'deaths'][1]
+quantity = ['infs', 'deaths'][1]
 
 
 def set_font(size=None, font='Libertinus Sans'):
