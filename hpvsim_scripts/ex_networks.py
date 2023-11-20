@@ -428,7 +428,7 @@ if __name__ == '__main__':
         plot_degree(partner_dict, dwelltime_df)
 
     if 'screening' in to_run:
-        end_probs = [0.0, 0.2, 0.4, 0.6]
+        end_probs = [0.0, 0.05, 0.1, 0.15, 0.2, 0.4, 0.6]
         sims = make_scens('india', end_probs=end_probs, n_seeds=n_seeds)
         big_msim = hpv.parallel(sims)
         mlist = big_msim.split(chunks=len(end_probs))
