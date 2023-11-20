@@ -1,6 +1,15 @@
 """
 This script compares two distinct sexual networks
 """
+# Additions to handle numpy multithreading
+import os
+
+os.environ.update(
+    OMP_NUM_THREADS='1',
+    OPENBLAS_NUM_THREADS='1',
+    NUMEXPR_NUM_THREADS='1',
+    MKL_NUM_THREADS='1',
+)
 
 import hpvsim as hpv
 import numpy as np
@@ -19,7 +28,7 @@ location = 'india'
 n_trials    = [2000, 1][debug]  # How many trials to run for calibration
 n_workers   = [40, 1][debug]    # How many cores to use
 storage     = ["mysql://hpvsim_user@localhost/hpvsim_db", None][debug]  # Storage for calibrations
-n_seeds     = [100, 1][debug]
+n_seeds     = [10, 1][debug]
 
 to_run = [
     # 'run_simple',
@@ -430,7 +439,7 @@ if __name__ == '__main__':
     if 'screening' in to_run:
         end_probs = [0.0, 0.05, 0.1, 0.15, 0.2, 0.4, 0.6]
         sims = make_scens('india', end_probs=end_probs, n_seeds=n_seeds)
-        big_msim = hpv.parallel(sims)
+        big_msim = hpv.parallel(sims, n_cpus=n_workers)
         mlist = big_msim.split(chunks=len(end_probs))
         results = dict()
         for msim in mlist:
