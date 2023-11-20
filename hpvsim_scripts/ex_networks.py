@@ -33,14 +33,14 @@ def make_network(location):
         layer_probs = dict(
             m=np.array([
                 [0, 5,  10,    15,   20,   25,   30,   35,   40,   45,   50,   55,   60,   65,   70,   75],
-                [0, 0, 0.05, 0.25, 0.70, 0.90, 0.95, 0.70, 0.75, 0.65, 0.55, 0.40, 0.40, 0.40, 0.40, 0.40],  # Females
+                [0, 0, 0.05, 0.30, 0.60, 0.70, 0.70, 0.70, 0.70, 0.70, 0.60, 0.40, 0.40, 0.40, 0.40, 0.40],  # Females
                 [0, 0, 0.01, 0.01, 0.10, 0.50, 0.60, 0.70, 0.70, 0.70, 0.70, 0.80, 0.70, 0.60, 0.50, 0.60]]  # Males
             ),
             c=np.array([
                 # Share of people of each age in casual partnerships
                 [0, 5,   10,   15,   20,   25,   30,   35,   40,   45,   50,   55,   60,   65,   70,   75],
-                [0, 0, 0.10, 0.60, 0.30, 0.20, 0.20, 0.20, 0.20, 0.05, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01],  # Females
-                [0, 0, 0.05, 0.70, 0.80, 0.60, 0.60, 0.50, 0.50, 0.40, 0.30, 0.10, 0.05, 0.01, 0.01, 0.01]],  # Males
+                [0, 0, 0.10, 0.20, 0.30, 0.40, 0.50, 0.60, 0.50, 0.40, 0.20, 0.01, 0.01, 0.01, 0.01, 0.01],  # Females
+                [0, 0, 0.05, 0.30, 0.30, 0.40, 0.40, 0.40, 0.40, 0.40, 0.30, 0.10, 0.05, 0.01, 0.01, 0.01]],  # Males
             ),
         )
 
@@ -64,7 +64,7 @@ def make_network(location):
     if location == 'rwanda':
         m_partners = dict(
             m=dict(dist='poisson1', par1=0.001),
-            c=dict(dist='poisson1', par1=3),
+            c=dict(dist='poisson1', par1=2),
         )
         f_partners = dict(
             m=dict(dist='poisson1', par1=0.001),
@@ -270,11 +270,11 @@ def run_sims(locations, seed=0, debug=0):
 if __name__ == '__main__':
 
     if 'run_simple' in to_run:
-        sim = run_sim('india', verbose=0.1)
+        sim = run_sim('rwanda', verbose=0.1)
         sim.plot()
 
     if 'calibrate' in to_run:
-        sim, calib = calibrate(location='india', n_trials=n_trials, n_workers=n_workers, do_save=True, filestem='')
+        sim, calib = calibrate(location='rwanda', n_trials=n_trials, n_workers=n_workers, do_save=True, filestem='')
 
     if 'run_sims' in to_run:
         msim, partner_dict = run_sims(debug=debug, locations=['rwanda', 'india'])
