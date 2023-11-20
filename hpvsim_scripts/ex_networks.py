@@ -145,6 +145,7 @@ def make_sim(location, seed=0, debug=0, add_analyzers=False):
         f_cross_layer=f_cross_layer,
         ms_agent_ratio=100,
         rand_seed=seed,
+        verbose=0.0,
     )
     analyzers = sc.autolist()
     if add_analyzers:
