@@ -13,11 +13,12 @@ resfolder = 'results'
 figfolder = 'figures'
 
 # Run settings
-n_trials    = [3000, 1][debug]  # How many trials to run for calibration
+n_trials    = [2000, 1][debug]  # How many trials to run for calibration
 n_workers   = [40, 1][debug]    # How many cores to use
 storage     = ["mysql://hpvsim_user@localhost/hpvsim_db", None][debug]  # Storage for calibrations
 
 to_run = [
+    # 'run_simple',
     'calibrate'
     # 'run_sims',
     # 'plot_sims'
@@ -52,8 +53,8 @@ def make_network(location):
             ),
             c=np.array([
                 [0, 5,   10,   15,   20,   25,   30,   35,   40,   45,   50,   55,   60,   65,   70,   75],
-                [0, 0, 0.10, 0.10, 0.10, 0.10, 0.50, 0.90, 0.90, 0.80, 0.80, 0.50, 0.40, 0.10, 0.01, 0.01],  # Share f
-                [0, 0, 0.10, 0.20, 0.50, 0.60, 0.80, 0.90, 0.90, 0.80, 0.80, 0.70, 0.50, 0.30, 0.10, 0.10]],  # Share m
+                [0, 0, 0.10, 0.50, 0.60, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 1.00, 0.50, 0.01, 0.01],  # Share f
+                [0, 0, 0.10, 0.20, 0.25, 0.35, 0.40, 0.70, 0.90, 0.90, 0.95, 0.95, 0.70, 0.30, 0.10, 0.10]],  # Share m
             ),
         )
 
@@ -84,12 +85,12 @@ def make_network(location):
         raise ValueError('Unknown network')
 
     if location == 'rwanda':
-        f_cross_layer = 0.02,
-        m_cross_layer = 0.10,
+        f_cross_layer = 0.02
+        m_cross_layer = 0.10
 
     elif location == 'india':
-        f_cross_layer = 0.05,
-        m_cross_layer = 0.50,
+        f_cross_layer = 0.05
+        m_cross_layer = 0.50
 
     else:
         raise ValueError('Unknown network')
@@ -174,8 +175,8 @@ def calibrate(location=None, n_trials=None, n_workers=None, do_save=True, filest
 
     # Different priors depending on location
     if location == 'india':
-        calib_pars['m_cross_layer']=[0.5, 0.3, 0.7, 0.05]
-        calib_pars['m_partners']=dict(
+        calib_pars['m_cross_layer'] = [0.5, 0.3, 0.7, 0.05]
+        calib_pars['m_partners'] = dict(
             c=dict(par1=[0.2, 0.1, 0.6, 0.02])
         )
         calib_pars['f_cross_layer']=[0.05, 0.01, 0.1, 0.01]
@@ -267,6 +268,10 @@ def run_sims(locations, seed=0, debug=0):
 
 # %% Run as a script
 if __name__ == '__main__':
+
+    if 'run_simple' in to_run:
+        sim = run_sim('india', verbose=0.1)
+        sim.plot()
 
     if 'calibrate' in to_run:
         sim, calib = calibrate(location='india', n_trials=n_trials, n_workers=n_workers, do_save=True, filestem='')
