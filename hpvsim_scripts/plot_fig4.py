@@ -74,13 +74,6 @@ print(gc)
 quantity = ['infs', 'deaths'][1]
 
 
-def set_font(size=None, font='Libertinus Sans'):
-    """ Set a custom font """
-    sc.fonts(add=sc.thisdir(aspath=True) / 'assets' / 'LibertinusSans-Regular.otf')
-    sc.options(font=font, fontsize=size)
-    return
-
-
 ut.set_font(size=18)
 fig, ax = pl.subplots(figsize=(11, 6))
 index = gc.reset_index()
