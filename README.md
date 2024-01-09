@@ -4,6 +4,8 @@ This repository includes the code for reproducing the figures and analyses of th
 
 > **HPVsim: An agent-based model of HPV transmission and cervical disease**. Stuart RM, Cohen JC, Kerr CC, Abeysuriya RG, Zimmermann M, Rao DW, Boudreau MC, Klein DJ (2023).
 
+This repository contains scripts for creating Figures 1, 4, 5, and 6. The code for Figure 2 is in a separate repository located here: https://github.com/hpvsim/hpvsim_india, and Figure 3 is a schematic.
+
 ## Organization
 
 The repository is organized as follows:
