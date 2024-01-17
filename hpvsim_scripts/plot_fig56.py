@@ -1,15 +1,6 @@
 """
 This script compares two distinct sexual networks
 """
-# Additions to handle numpy multithreading
-import os
-
-os.environ.update(
-    OMP_NUM_THREADS='1',
-    OPENBLAS_NUM_THREADS='1',
-    NUMEXPR_NUM_THREADS='1',
-    MKL_NUM_THREADS='1',
-)
 
 import hpvsim as hpv
 import numpy as np

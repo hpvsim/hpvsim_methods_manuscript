@@ -93,7 +93,7 @@ def plot_nh_simple(sim=None):
     axes[3].set_title("(D) Probability that a high-grade lesion of \nat least X years will eventuate in cancer")
 
     fig.tight_layout()
-    fig.savefig('../figures/fig1.png')
+    sc.savefig('figures/fig1.png')
     fig.show()
     return
 
