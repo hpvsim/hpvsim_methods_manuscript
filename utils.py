@@ -9,6 +9,7 @@ import sciris as sc
 resfolder = 'results'
 figfolder = 'figures'
 
+
 # Define utils
 def set_font(size=None, font='Libertinus Sans'):
     ''' Set a custom font '''

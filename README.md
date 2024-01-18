@@ -4,32 +4,32 @@ This repository includes the code for reproducing the figures and analyses of th
 
 > **HPVsim: An agent-based model of HPV transmission and cervical disease**. Stuart RM, Cohen JC, Kerr CC, Abeysuriya RG, Zimmermann M, Rao DW, Boudreau MC, Klein DJ (2023).
 
+This repository contains scripts for creating Figures 1, 4, 5, and 6. The code for Figure 2 is in a separate repository located here: https://github.com/hpvsim/hpvsim_india, and Figure 3 is a schematic.
+
 ## Organization
 
 The repository is organized as follows:
 
 ### Running scripts
 
-There are separate scripts for running and plotting each figure and the use cases, all of which are in the ``hpvsim_scripts`` folder. Specifically:
+There are separate scripts for running and plotting each figure and the use cases. Specifically:
 
 #### `plot_fig1.py`
  - This script can be used to reproduce Figure 1.
 
 #### `plot_fig4.py` 
-- This script can be used to reproduce Figure 4.
+- This script can be used to reproduce Figure 4, the first figure in the results section.
 
-#### `use_case_1.py`
-This script is used for running and plotting the results for use case 1.
-- The `run_scenarios` section takes 30-40 minutes to run.
- - `plot_scenarios` and `run_cea` creates plots of the use case 1 outputs and run in seconds.
+#### `plot_fig56.py`
+This script is used for running and plotting the results for the remaining two case studies in the results section.
+- The sections `run_simple`, `calibrate` and `plot_calibrate` are legacy code that was used for validating the exercises - these sections can safely be ignored.
+- The section `run_sims` runs the simulations and creates the plotting objects used for section 3.2 of the methods paper.
+- The section `plot_fig5_sims` can be used to reproduce Figure 5.
+- The section `run_screening` runs the simulations and creates the plotting objects used for section 3.3 of the methods paper.
+- The section `plot_fig6_screening` can be used to reproduce Figure 6.
 
-#### `use_case_2.py`
-This script is used for running and plotting the results for use case 2.
-- The `run_scenarios` section is computationally intensive and typically run on virtual machines.
- - `plot_scenarios` creates plots of the use case 2 results.
 
 ### Additional utility scripts
-- `analyzers.py` defines a custom analyzer for extracting additional data from simulations (specifically, cputing DALYs).
 - `utils.py` contains utilities for numerical calculations and creating plots.
 
 

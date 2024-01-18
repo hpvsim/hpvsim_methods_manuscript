@@ -3,8 +3,8 @@ import pylab as pl
 import hpvsim as hpv
 import utils as ut
 
-rerun = True
-filename = '../results/multiscale_test.df'
+rerun = False
+filename = 'results/multiscale_test.df'
 
 T = sc.timer()
 
@@ -71,14 +71,7 @@ print(gs)
 sc.heading('CoVs')
 print(gc)
 
-quantity = ['infs', 'cancers', 'deaths'][1]
-
-
-def set_font(size=None, font='Libertinus Sans'):
-    """ Set a custom font """
-    sc.fonts(add=sc.thisdir(aspath=True) / 'assets' / 'LibertinusSans-Regular.otf')
-    sc.options(font=font, fontsize=size)
-    return
+quantity = ['infs', 'deaths'][1]
 
 
 ut.set_font(size=18)
@@ -117,7 +110,7 @@ pl.ylabel(f'Coefficient of variation in {quantity}')
 
 
 fig.tight_layout()
-pl.savefig(f"../{ut.figfolder}/fig4.png", dpi=100)
+pl.savefig(f"{ut.figfolder}/fig4.png", dpi=100)
 pl.show()
 
 total = T.timings[:].sum()
