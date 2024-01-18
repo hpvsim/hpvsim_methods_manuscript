@@ -4,7 +4,7 @@ import hpvsim as hpv
 import utils as ut
 
 rerun = False
-filename = '../results/multiscale_test.df'
+filename = 'results/multiscale_test.df'
 
 T = sc.timer()
 
@@ -110,7 +110,7 @@ pl.ylabel(f'Coefficient of variation in {quantity}')
 
 
 fig.tight_layout()
-pl.savefig(f"../{ut.figfolder}/fig4.png", dpi=100)
+pl.savefig(f"{ut.figfolder}/fig4.png", dpi=100)
 pl.show()
 
 total = T.timings[:].sum()

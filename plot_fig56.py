@@ -229,7 +229,7 @@ def calibrate(location=None, n_trials=None, n_workers=None, do_save=True, filest
     calib.calibrate()
     filename = f'{location}_calib{filestem}'
     if do_save:
-        sc.saveobj(f'../results/{filename}.obj', calib)
+        sc.saveobj(f'results/{filename}.obj', calib)
 
     print(f'Best pars are {calib.best_pars}')
 
@@ -238,7 +238,7 @@ def calibrate(location=None, n_trials=None, n_workers=None, do_save=True, filest
 def plot_calib(location, which_pars=0, save_pars=True, filestem=''):
     """ Plot calibration """
     filename = f'{location}_calib{filestem}'
-    calib = sc.load(f'../results/{filename}.obj')
+    calib = sc.load(f'results/{filename}.obj')
 
     sc.fonts(add=sc.thisdir(aspath=True) / 'Libertinus Sans')
     sc.options(font='Libertinus Sans')
@@ -251,8 +251,8 @@ def plot_calib(location, which_pars=0, save_pars=True, filestem=''):
         trial_pars = sc.autolist()
         for i in range(100):
             trial_pars += calib.trial_pars_to_sim_pars(which_pars=i)
-        sc.save(f'../results/{location}_pars{filestem}.obj', calib_pars)
-        sc.save(f'../results/{location}_pars{filestem}_all.obj', trial_pars)
+        sc.save(f'results/{location}_pars{filestem}.obj', calib_pars)
+        sc.save(f'results/{location}_pars{filestem}_all.obj', trial_pars)
 
     return calib
 
@@ -338,7 +338,7 @@ def plot_degree(partner_dict, dwelltime_df):
 
         rn += 1
 
-    plt.savefig(f"../{figfolder}/fig5.png", dpi=100)
+    plt.savefig(f"{figfolder}/fig5.png", dpi=100)
     plt.show()
 
     return
@@ -427,8 +427,8 @@ if __name__ == '__main__':
         sc.saveobj(f'{resfolder}/dwelltime_df.obj', dwelltime_df)
 
     if 'plot_fig5_sims' in to_run:
-        partner_dict = sc.loadobj(f'../{resfolder}/partner_dict.obj')
-        dwelltime_df = sc.loadobj(f'../{resfolder}/dwelltime_df.obj')
+        partner_dict = sc.loadobj(f'{resfolder}/partner_dict.obj')
+        dwelltime_df = sc.loadobj(f'{resfolder}/dwelltime_df.obj')
         plot_degree(partner_dict, dwelltime_df)
 
     if 'run_screening' in to_run:
@@ -441,12 +441,12 @@ if __name__ == '__main__':
             msim.reduce()
             results[msim.sims[0].label] = msim.results
 
-        sc.saveobj(f'../{resfolder}/scen_results.obj', results)
+        sc.saveobj(f'{resfolder}/scen_results.obj', results)
 
     if 'plot_fig6_screening' in to_run:
         end_probs = [0.0, 0.05, 0.1, 0.15, 0.2]
         end_prob_labels = ['0%', '5%', '10%', '15%', '20%']
-        results = sc.loadobj(f'../{resfolder}/scen_results.obj')
+        results = sc.loadobj(f'{resfolder}/scen_results.obj')
 
         for rnum, res in results.items():
             print(f'{rnum.ljust(14,"0")}: {res.asr_cancer_incidence[-1]:.2f}, ({res.asr_cancer_incidence.low[-1]:.2f}, {res.asr_cancer_incidence.high[-1]:.2f})')
@@ -465,7 +465,7 @@ if __name__ == '__main__':
         ax.set_title('ASR cancer incidence, 2020')
         ax.set_xlabel('Lifetime screening coverage, 2020')
         plt.axhline(y=18, color='k', linestyle='--')
-        plt.savefig(f"../{figfolder}/fig6.png", dpi=100)
+        plt.savefig(f"{figfolder}/fig6.png", dpi=100)
         plt.show()
 
     print('Done.')
