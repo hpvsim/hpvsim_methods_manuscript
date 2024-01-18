@@ -12,7 +12,7 @@ The repository is organized as follows:
 
 ### Running scripts
 
-There are separate scripts for running and plotting each figure and the use cases, all of which are in the ``hpvsim_scripts`` folder. Specifically:
+There are separate scripts for running and plotting each figure and the use cases. Specifically:
 
 #### `plot_fig1.py`
  - This script can be used to reproduce Figure 1.

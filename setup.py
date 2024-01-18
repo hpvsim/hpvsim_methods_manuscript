@@ -19,7 +19,7 @@ CLASSIFIERS = [
 ]
 
 setup(
-    name="hpvsim_scripts",
+    name="hpvsim_methods_manuscript",
     version="1.0.0",
     author="Robyn Stuart, Jamie Cohen, Cliff Kerr, Romesh Abeysuriya, Mariah Boudreau, and Dan Klein",
     author_email="info@hpvsim.org",
