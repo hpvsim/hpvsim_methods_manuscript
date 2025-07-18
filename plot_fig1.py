@@ -3,7 +3,7 @@ This script produces figure 1 of the HPVsim methods paper
 """
 
 import hpvsim as hpv
-import hpvsim.parameters as hppar
+# import hpvsim.parameters as hppar
 import sciris as sc
 import pylab as pl
 import utils as ut
@@ -21,10 +21,10 @@ def plot_nh_simple(sim=None):
     cin_fns = sc.autolist()
     dur_precin = sc.autolist()
     for gi, genotype in enumerate(genotypes):
-        dur_precin += sim['genotype_pars'][genotype]['dur_precin']
-        dur_cin += sim['genotype_pars'][genotype]['dur_cin']
-        cancer_fns += sim['genotype_pars'][genotype]['cancer_fn']
-        cin_fns += sim['genotype_pars'][genotype]['cin_fn']
+        dur_precin += sim.pars[genotype]['dur_precin']
+        dur_cin += sim.pars[genotype]['dur_cin']
+        cancer_fns += sc.mergedicts(sim.pars[genotype]['cin_fn'], sim.pars[genotype]['cancer_fn'])
+        cin_fns += sim.pars[genotype]['cin_fn']
 
     ####################
     # Make figure, set fonts and colors
@@ -39,7 +39,7 @@ def plot_nh_simple(sim=None):
     ####################
     dt = 0.25
     this_precinx = np.arange(dt, 15+dt, dt)
-    years = np.arange(1,16,1)
+    years = np.arange(1, 16, 1)
     this_cinx = np.arange(dt, 30+dt, dt)
 
     width = .2
@@ -51,22 +51,27 @@ def plot_nh_simple(sim=None):
 
         # Panel A: durations of infection
         # axes[0].set_ylim([0,1])
-        sigma, scale = ut.lognorm_params(dur_precin[gi]['par1'], dur_precin[gi]['par2'])
+        mean = sim.pars[genotype]['dur_precin'].pars['mean'].v # mean duration of infection
+        std = sim.pars[genotype]['dur_precin'].pars['std'].v # std. dev. of infection duration
+        sigma, scale = ut.lognorm_params(mean, std)
         rv = lognorm(sigma, 0, scale)
 
         axes[0].bar(years+offset - width/3, rv.pdf(years), color=colors[gi], lw=2, label=glabels[gi], width=width)
         multiplier += 1
+
         # Panel B: prob of dysplasia
-        dysp = hppar.compute_severity(this_precinx[:], pars=cin_fns[gi])
+        dysp = hpv.logf2(this_precinx[:], **cin_fns[gi])
         axes[1].plot(this_precinx, dysp, color=colors[gi], lw=2, label=gtype.upper())
 
         # Panel C: durations of CIN
-        sigma, scale = ut.lognorm_params(dur_cin[gi]['par1'], dur_cin[gi]['par2'])
+        mean = sim.pars[genotype]['dur_cin'].pars['mean'].v # mean duration of infection
+        std = sim.pars[genotype]['dur_cin'].pars['std'].v # std. dev. of infection duration
+        sigma, scale = ut.lognorm_params(mean, std)
         rv = lognorm(sigma, 0, scale)
         axes[2].plot(this_cinx, rv.pdf(this_cinx), color=colors[gi], lw=2, label=glabels[gi])
 
         # Panel D: cancer
-        cancer = hppar.compute_severity(this_cinx[:], pars=sc.mergedicts(cin_fns[gi], cancer_fns[gi]))
+        cancer = hpv.compute_cancer_prob(this_cinx[:], pars=cancer_fns[gi])
         axes[3].plot(this_cinx, cancer, color=colors[gi], lw=2, label=gtype.upper())
 
     axes[0].set_ylabel("")
@@ -94,15 +99,15 @@ def plot_nh_simple(sim=None):
 
     fig.tight_layout()
     sc.savefig('figures/fig1.png')
-    fig.show()
+
     return
 
 
 # %% Run as a script
 if __name__ == '__main__':
 
-    sim = hpv.Sim(genotypes=[16, 18, 'hi5', 'ohr'])
-    sim.initialize()
+    sim = hpv.Sim()
+    sim.init()
     plot_nh_simple(sim)
 
     print('Done.')
