@@ -1,0 +1,15 @@
+{
+  "figures": [
+    "fig5",
+    "fig6"
+  ],
+  "source_objects": [
+    "results/partner_dict.obj",
+    "results/dwelltime_df.obj",
+    "results/scen_results.obj"
+  ],
+  "original_hpvsim_version": "1.0.0 (per requirements_frozen.txt)",
+  "deserialized_on_hpvsim_version": "2.2.6",
+  "date": "2026-04-18",
+  "note": "Derived from committed .obj files published with the manuscript. Not a fresh run."
+}
