@@ -50,6 +50,29 @@ If HPVsim is already installed (`pip install hpvsim`), the only other required d
 Run the desired analyses by running one of the scripts described above.
 
 
+## Adding a future-version baseline (v2.3, v3.0, ...)
+
+When a new HPVsim version ships:
+
+```bash
+# 1. On VM, in a clean env pinned to the new version
+conda create -n hpvsim230 python=3.11 -y && conda activate hpvsim230
+pip install hpvsim==2.3.0 seaborn
+# 2. Regenerate Figs 1, 5, 6 data
+python save_fig1_baseline.py --outdir results/v2.3.0_baseline
+# Uncomment 'run_sims' and 'run_screening' in plot_fig56.py's to_run list, then
+python plot_fig56.py
+# Dump dwelltime_df as CSV on the VM (avoids pickle compat across pandas versions):
+python -c "import sciris as sc; sc.loadobj('results/dwelltime_df.obj').to_csv('results/dwelltime_df.csv', index=False)"
+python save_fig56_baseline.py --outdir results/v2.3.0_baseline --dwelltime-csv results/dwelltime_df.csv
+# 3. Commit and push results/v2.3.0_baseline/ (don't commit dwelltime_df.csv — gitignored)
+# 4. Run comparison locally
+python compare_baselines.py --baselines v1.0.0_published v2.2.6_baseline v2.3.0_baseline
+```
+
+The same pattern applies for v3.0; append the new baseline name to `--baselines`.
+
+
 ## Further information
 
 Further information on HPVsim is available [here](http://docs.hpvsim.org). If you have further questions or would like technical assistance, please reach out to us at info@hpvsim.org.
