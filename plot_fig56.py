@@ -26,10 +26,10 @@ to_run = [
     # 'run_simple',
     # 'calibrate'
     # 'plot_calibrate',
-    # 'run_sims',
-    'plot_fig5_sims',
-    # 'run_screening',
-    'plot_fig6_screening',
+    'run_sims',
+    # 'plot_fig5_sims',
+    'run_screening',
+    # 'plot_fig6_screening',
 ]
 
 
