@@ -152,15 +152,40 @@ class dwelltime_by_genotype(hpv.Analyzer):
         return
 
 
+def _to_annual_prob(p, dt):
+    """Convert a per-timestep probability to an annual probability (HPVsim v2.3+)."""
+    p = np.clip(p, 0, 1 - 1e-10)
+    return 1 - (1 - p) ** (1 / dt)
+
+
+def _layer_probs_to_annual(layer_probs, dt):
+    """Convert a layer_probs dict (rows = age, female, male) from per-timestep to annual."""
+    out = {}
+    for lkey, lp in layer_probs.items():
+        lp_new = lp.copy().astype(float)
+        for row in [1, 2]:
+            lp_new[row, :] = _to_annual_prob(lp_new[row, :], dt)
+        out[lkey] = lp_new
+    return out
+
+
 def make_sim(location, seed=0, debug=0, add_analyzers=False, interventions=None):
     """ Make a single sim for a given network """
 
     # Parameters
     layer_probs, m_partners, f_partners, m_cross_layer, f_cross_layer = make_network(location)
 
+    dt = [0.25, 1.0][debug]
+
+    # HPVsim v2.3+ treats layer_probs and cross-layer probabilities as annual,
+    # but the values defined in make_network() were calibrated as per-timestep.
+    layer_probs = _layer_probs_to_annual(layer_probs, dt)
+    m_cross_layer = _to_annual_prob(m_cross_layer, dt)
+    f_cross_layer = _to_annual_prob(f_cross_layer, dt)
+
     pars = dict(
         n_agents=[20e3, 5e3][debug],
-        dt=[0.25, 1.0][debug],
+        dt=dt,
         start=[1960, 2000][debug],
         burnin=[30, 0][debug],
         end=2020,
