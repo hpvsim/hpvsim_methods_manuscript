@@ -33,5 +33,21 @@
     "n_agents": 20000,
     "hpvsim_version": "3.0.0",
     "date": "2026-07-17"
+  },
+  "fig6": {
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "end_probs": [
+      0.0,
+      0.1,
+      0.2
+    ],
+    "ms_agent_ratio": 100,
+    "n_agents": 20000,
+    "hpvsim_version": "3.0.0",
+    "date": "2026-07-17"
   }
 }
