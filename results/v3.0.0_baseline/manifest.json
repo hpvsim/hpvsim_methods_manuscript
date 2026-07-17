@@ -1,0 +1,26 @@
+{
+  "figure": "fig1",
+  "hpvsim_version": "3.0.0",
+  "date": "2026-07-16",
+  "arrays": [
+    "cinx",
+    "panelA_hi5",
+    "panelA_hpv16",
+    "panelA_hpv18",
+    "panelA_ohr",
+    "panelB_hi5",
+    "panelB_hpv16",
+    "panelB_hpv18",
+    "panelB_ohr",
+    "panelC_hi5",
+    "panelC_hpv16",
+    "panelC_hpv18",
+    "panelC_ohr",
+    "panelD_hi5",
+    "panelD_hpv16",
+    "panelD_hpv18",
+    "panelD_ohr",
+    "precinx",
+    "years"
+  ]
+}

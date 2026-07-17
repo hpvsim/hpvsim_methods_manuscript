@@ -1,0 +1,13 @@
+{
+  "figures": [
+    "fig5",
+    "fig6"
+  ],
+  "source_objects": [
+    "results/partner_dict.obj",
+    "results/dwelltime_df.csv",
+    "results/scen_results.obj"
+  ],
+  "hpvsim_version": "2.3.0",
+  "date": "2026-04-22"
+}
