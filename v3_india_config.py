@@ -36,9 +36,11 @@ def india_network(dt=DT):
     return hpv.SexualNetwork(**C._network_pars('india', overrides=overrides))
 
 
-def make_india_sim(seed, ms=100, analyzers=None, start=1960, stop=2020, dt=DT, n_agents=20_000):
+def make_india_sim(seed, ms=100, analyzers=None, interventions=None,
+                   start=1960, stop=2020, dt=DT, n_agents=20_000):
     gpars = {g: {'beta': 0.28} for g in ['hpv16', 'hpv18', 'hi5', 'ohr']}
     return hpv.Sim(location='india', genotypes=[16, 18, 'hi5', 'ohr'], genotype_pars=gpars,
                    start=start, stop=stop, dt=dt, n_agents=n_agents, ms_agent_ratio=ms,
                    networks=[india_network(dt)], analyzers=(analyzers or []),
+                   interventions=(interventions or []),
                    rand_seed=seed, verbose=0)

@@ -1,5 +1,6 @@
 import sciris as sc
 import pylab as pl
+import numpy as np
 import hpvsim as hpv
 import utils as ut
 
@@ -10,14 +11,15 @@ T = sc.timer()
 
 if rerun:
 
-    # Define the parameters
+    # Define the parameters (v3 API: kwargs, stop instead of n_years/end,
+    # per-genotype results under hpvtotal). rel_init_prev is not a v3 par and
+    # is dropped -- it only rescales initial seeding, not the CoV-vs-runtime
+    # scaling this figure demonstrates.
     pars = dict(
-       # total_pop=10e3,  # Population size
-        start=1980,  # Starting year
-        n_years=50,  # Number of years to simulate
-        genotypes=[16, 18],  # Include the two genotypes of greatest general interest
+        start=1980,   # Starting year
+        stop=2030,    # 50 years (was n_years=50)
+        genotypes=[16, 18],  # Two genotypes of greatest general interest
         verbose=0,
-        rel_init_prev=4.0,
     )
 
     debug = 0
@@ -34,19 +36,20 @@ if rerun:
                 count += 1
                 label = f'n={n} ms={ms} r={r}'
                 sc.heading(f'Running {count} of {len(n_agents) * len(ms_agent_ratios) * repeats}: {label}')
-                sim = hpv.Sim(pars, rand_seed=r, n_agents=n, ms_agent_ratio=ms, label=label)
+                sim = hpv.Sim(**pars, rand_seed=r, n_agents=int(n), ms_agent_ratio=ms, label=label)
                 T.tic()
                 sim.run()
                 sim.time = T.tocout()
+                res = sim.results.hpvtotal
                 row = dict(
                     n=n,
                     ms=ms,
                     seed=r,
                     time=sim.time,
                     n_agents=len(sim.people),
-                    infs=sim.results.infections.values.sum(),
-                    cancers=sim.results.cancers.values.sum(),
-                    deaths=sim.results.cancer_deaths.values.sum()
+                    infs=np.asarray(res.new_infections).sum(),
+                    cancers=np.asarray(res.new_cancers).sum(),
+                    deaths=np.asarray(res.new_cancer_deaths).sum(),
                 )
                 data.append(row)
                 print(f'Time: {sim.time:0.2f} s')

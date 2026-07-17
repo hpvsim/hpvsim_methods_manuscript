@@ -1,0 +1,20 @@
+{
+  "figures": [
+    "fig5",
+    "fig6"
+  ],
+  "hpvsim_version": "2.3.1",
+  "engine": "hpvsim_v23_frozen @ fix-multiscale-cin-regate (patched v2.3.1)",
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "end_probs": [
+    0.0,
+    0.1,
+    0.2
+  ],
+  "config": "n_agents=20000 dt=0.25 start=1960 stop=2020 ms_agent_ratio=100",
+  "date": "2026-07-17"
+}

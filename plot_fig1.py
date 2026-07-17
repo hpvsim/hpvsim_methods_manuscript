@@ -3,7 +3,7 @@ This script produces figure 1 of the HPVsim methods paper
 """
 
 import hpvsim as hpv
-import hpvsim.parameters as hppar
+from hpvsim.utils import compute_severity  # v3: was hpvsim.parameters.compute_severity
 import sciris as sc
 import pylab as pl
 import utils as ut
@@ -16,15 +16,20 @@ def plot_nh_simple(sim=None):
     genotypes = ['hpv16', 'hpv18', 'hi5', 'ohr']
     glabels = ['HPV16', 'HPV18', 'Hi5', 'OHR']
 
+    # v3: per-genotype natural-history pars come from hpv.get_genotype_pars(gt);
+    # durations are ss.lognorm_ex Dists parameterized by mean/std (not par1/par2).
     dur_cin = sc.autolist()
     cancer_fns = sc.autolist()
     cin_fns = sc.autolist()
     dur_precin = sc.autolist()
     for gi, genotype in enumerate(genotypes):
-        dur_precin += sim['genotype_pars'][genotype]['dur_precin']
-        dur_cin += sim['genotype_pars'][genotype]['dur_cin']
-        cancer_fns += sim['genotype_pars'][genotype]['cancer_fn']
-        cin_fns += sim['genotype_pars'][genotype]['cin_fn']
+        gp = hpv.get_genotype_pars(genotype)
+        dur_precin += dict(par1=float(gp['dur_precin'].pars['mean']),
+                           par2=float(gp['dur_precin'].pars['std']))
+        dur_cin += dict(par1=float(gp['dur_cin'].pars['mean']),
+                        par2=float(gp['dur_cin'].pars['std']))
+        cancer_fns += gp['cancer_fn']
+        cin_fns += gp['cin_fn']
 
     ####################
     # Make figure, set fonts and colors
@@ -57,7 +62,7 @@ def plot_nh_simple(sim=None):
         axes[0].bar(years+offset - width/3, rv.pdf(years), color=colors[gi], lw=2, label=glabels[gi], width=width)
         multiplier += 1
         # Panel B: prob of dysplasia
-        dysp = hppar.compute_severity(this_precinx[:], pars=cin_fns[gi])
+        dysp = compute_severity(this_precinx[:], pars=cin_fns[gi])
         axes[1].plot(this_precinx, dysp, color=colors[gi], lw=2, label=gtype.upper())
 
         # Panel C: durations of CIN
@@ -66,7 +71,7 @@ def plot_nh_simple(sim=None):
         axes[2].plot(this_cinx, rv.pdf(this_cinx), color=colors[gi], lw=2, label=glabels[gi])
 
         # Panel D: cancer
-        cancer = hppar.compute_severity(this_cinx[:], pars=sc.mergedicts(cin_fns[gi], cancer_fns[gi]))
+        cancer = compute_severity(this_cinx[:], pars=sc.mergedicts(cin_fns[gi], cancer_fns[gi]))
         axes[3].plot(this_cinx, cancer, color=colors[gi], lw=2, label=gtype.upper())
 
     axes[0].set_ylabel("")
@@ -102,7 +107,7 @@ def plot_nh_simple(sim=None):
 if __name__ == '__main__':
 
     sim = hpv.Sim(genotypes=[16, 18, 'hi5', 'ohr'])
-    sim.initialize()
+    sim.init()  # v3: was sim.initialize()
     plot_nh_simple(sim)
 
     print('Done.')
