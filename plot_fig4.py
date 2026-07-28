@@ -40,7 +40,10 @@ if rerun:
                 T.tic()
                 sim.run()
                 sim.time = T.tocout()
-                res = sim.results.hpvtotal
+                # v3.0 release renamed the pooled results group hpvtotal -> all_hpv.
+                res = getattr(sim.results, 'all_hpv', None)
+                if res is None:
+                    res = sim.results.hpvtotal
                 row = dict(
                     n=n,
                     ms=ms,

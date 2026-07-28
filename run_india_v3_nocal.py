@@ -72,8 +72,12 @@ tv = np.asarray(res.timevec)
 yrs = np.array([t.year if hasattr(t, 'year') else t for t in tv])
 i2020 = np.where(yrs == 2020)[0]
 
-new_cancers = np.asarray(res.hpvtotal.new_cancers)
-cum_cancers = float(np.asarray(res.hpvtotal.cum_cancers)[-1])
+# v3.0 release renamed the pooled results group hpvtotal -> all_hpv.
+_pooled = getattr(res, 'all_hpv', None)
+if _pooled is None:
+    _pooled = res.hpvtotal
+new_cancers = np.asarray(_pooled.new_cancers)
+cum_cancers = float(np.asarray(_pooled.cum_cancers)[-1])
 n_alive = np.asarray(res.n_alive)
 n_female = np.asarray(res.n_female)
 
